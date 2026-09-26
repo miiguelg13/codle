@@ -84,7 +84,8 @@ export class LocalExecutor implements Executor {
         case 'cpp': {
           await writeFile(path.join(dir, 'main.cpp'), req.source);
           const exe = process.platform === 'win32' ? 'main.exe' : 'main';
-          const c = await run(config.local.gpp, ['-O2', '-std=c++17', '-o', exe, 'main.cpp'], { cwd: dir, timeoutMs: 60_000 });
+          const flags = ['-O2', '-std=c++17', ...(process.platform === 'win32' ? ['-static'] : []), '-o', exe, 'main.cpp'];
+          const c = await run(config.local.gpp, flags, { cwd: dir, timeoutMs: 60_000 });
           if (c.code !== 0) return compileError(c, dir);
           runCmd = path.join(dir, exe);
           runArgs = [];
