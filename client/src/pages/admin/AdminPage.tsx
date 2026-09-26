@@ -91,6 +91,30 @@ function AdminDashboard() {
     }
   };
 
+  const upload = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setBusy(true);
+    setError(null);
+    const total: ImportReport = { imported: [], updated: [], skipped: [], errors: [] };
+    try {
+      for (const f of Array.from(files)) {
+        try {
+          const r = await adminApi.uploadDay(await f.text());
+          total.imported.push(...r.imported);
+          total.updated.push(...r.updated);
+          total.skipped.push(...r.skipped);
+          total.errors.push(...r.errors);
+        } catch (e) {
+          total.errors.push(`${f.name}: ${adminError(e)}`);
+        }
+      }
+      setImportReport(total);
+      load();
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const s = overview?.problemsByStatus ?? {};
 
   return (
@@ -98,9 +122,23 @@ function AdminDashboard() {
       <div className="admin-head">
         <h1>Administración</h1>
         <div className="admin-actions">
-          <button className="btn secondary" onClick={runImport} disabled={busy} title="Importa ahora los ficheros de retos/">
+          <button className="btn secondary" onClick={runImport} disabled={busy} title="Importa ahora los ficheros de la carpeta retos/ del servidor">
             ⟳ Importar retos del agente
           </button>
+          <label className="btn secondary file-btn" title="Sube ficheros retos/AAAA-MM-DD.json (por ejemplo, a la web publicada)">
+            ⬆ Subir ficheros de retos
+            <input
+              type="file"
+              accept=".json,application/json"
+              multiple
+              hidden
+              disabled={busy}
+              onChange={(e) => {
+                void upload(e.target.files);
+                e.target.value = '';
+              }}
+            />
+          </label>
           <Link to="/admin/problems/new" className="btn primary">
             + Nuevo reto
           </Link>

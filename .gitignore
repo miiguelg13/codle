@@ -7,3 +7,5 @@ __pycache__/
 .data/
 logs/
 retos/*.json
+.codle-deploy
+.codle-deploy-estado.json

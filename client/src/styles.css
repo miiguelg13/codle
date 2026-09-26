@@ -1500,3 +1500,11 @@ a.cal-day:hover {
     max-height: none;
   }
 }
+
+.file-btn {
+  cursor: pointer;
+}
+
+.editor-slow {
+  margin: 8px 10px;
+}

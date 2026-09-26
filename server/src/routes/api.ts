@@ -28,8 +28,21 @@ function parseBody<T>(schema: z.ZodType<T>, body: unknown): T {
   return r.data;
 }
 
-const runLimiter = rateLimit({ windowMs: 60_000, limit: 20, standardHeaders: 'draft-7', legacyHeaders: false });
-const submitLimiter = rateLimit({ windowMs: 60_000, limit: 10, standardHeaders: 'draft-7', legacyHeaders: false });
+const byPlayer = (req: Request) => req.playerId ?? req.ip ?? 'anon';
+const runLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: config.runLimitPerMinute,
+  keyGenerator: byPlayer,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+});
+const submitLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: config.submitLimitPerMinute,
+  keyGenerator: byPlayer,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+});
 
 api.get(
   '/meta',
@@ -61,8 +74,11 @@ api.get(
   h(async (req) => getProblem(req.params.id, req.playerId)),
 );
 
+const ipLimiter = rateLimit({ windowMs: 60_000, limit: 60, standardHeaders: 'draft-7', legacyHeaders: false });
+
 api.post(
   '/problems/:id/run',
+  ipLimiter,
   runLimiter,
   h(async (req) => {
     const { language, code } = parseBody(codeBody, req.body);
@@ -72,6 +88,7 @@ api.post(
 
 api.post(
   '/problems/:id/submit',
+  ipLimiter,
   submitLimiter,
   h(async (req) => {
     const { language, code } = parseBody(codeBody, req.body);
@@ -83,6 +100,14 @@ api.post(
 export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction): void {
   if (err instanceof HttpError) {
     res.status(err.status).json({ error: err.code, message: err.message });
+    return;
+  }
+  if (err instanceof Error && err.name === 'ExecutorQuotaError') {
+    res.status(503).json({ error: 'executor_quota', message: err.message });
+    return;
+  }
+  if ((err as { type?: string })?.type === 'entity.too.large') {
+    res.status(413).json({ error: 'too_large' });
     return;
   }
   console.error(err);

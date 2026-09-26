@@ -1,6 +1,6 @@
 import { config } from '../config.js';
 import type { Language } from '../harness/types.js';
-import type { ExecRequest, ExecResult, ExecStatus, Executor } from './types.js';
+import { ExecutorQuotaError, type ExecRequest, type ExecResult, type ExecStatus, type Executor } from './types.js';
 
 interface Judge0Language {
   id: number;
@@ -102,6 +102,7 @@ export class Judge0Executor implements Executor {
       headers: this.headers(),
       body: JSON.stringify(body),
     });
+    if (res.status === 429) throw new ExecutorQuotaError();
     if (!res.ok) {
       const text = await res.text().catch(() => '');
       return internalError(`Judge0 respondió ${res.status}: ${text.slice(0, 300)}`);

@@ -28,3 +28,10 @@ export interface Executor {
   name: string;
   execute(req: ExecRequest): Promise<ExecResult>;
 }
+
+export class ExecutorQuotaError extends Error {
+  constructor(message = 'Cuota del motor de ejecución agotada') {
+    super(message);
+    this.name = 'ExecutorQuotaError';
+  }
+}

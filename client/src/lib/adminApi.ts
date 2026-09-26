@@ -109,6 +109,7 @@ export const adminApi = {
   tryCode: (p: AdminProblem, language: Language, code: string) =>
     request<TryResult>('/admin/tools/try', json('POST', { problem: payload(p), language, code })),
   importNow: () => request<ImportReport>('/admin/tools/import', json('POST', {})),
+  uploadDay: (text: string) => request<ImportReport>('/retos/upload', { method: 'POST', body: text }),
 };
 
 export const STATUS_LABEL: Record<ProblemStatus, string> = {

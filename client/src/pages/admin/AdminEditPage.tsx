@@ -14,7 +14,7 @@ import {
   type ValueType,
 } from '../../lib/adminApi';
 import { addDays, formatValue, LANGUAGE_LABELS } from '../../lib/format';
-import { MONACO_LANG } from '../../lib/monaco';
+import { defineCodleTheme, MONACO_LANG } from '../../lib/monaco';
 import { AdminGate, adminError } from './AdminGate';
 
 const LANGS: Language[] = ['python', 'javascript', 'java', 'cpp'];
@@ -467,6 +467,7 @@ function Editor_() {
                     update({ referenceSolution: { language: p.referenceSolution?.language ?? 'python', code: v ?? '' } })
                   }
                   theme="codle-dark"
+                  beforeMount={defineCodleTheme}
                   options={{ fontSize: 13, minimap: { enabled: false }, scrollBeyondLastLine: false, automaticLayout: true }}
                 />
               </div>
@@ -498,6 +499,7 @@ function Editor_() {
                   value={tryCode}
                   onChange={(v) => setTryCode(v ?? '')}
                   theme="codle-dark"
+                  beforeMount={defineCodleTheme}
                   options={{ fontSize: 13, minimap: { enabled: false }, scrollBeyondLastLine: false, automaticLayout: true }}
                 />
               </div>

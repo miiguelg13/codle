@@ -8,10 +8,14 @@ Cada día hay **4 retos** (Fácil, Medio, Difícil y Experto). Se resuelven en u
 
 | Parte | Tecnología |
 |---|---|
-| Frontend | React 19 + Vite + TypeScript, Monaco Editor, react-router |
+| Frontend | React 19 + Vite + TypeScript, Monaco Editor (cargado desde jsDelivr), react-router |
 | Backend | Node + Express + TypeScript |
 | Base de datos | MongoDB (Mongoose) |
 | Ejecución de código | Judge0 (API), o un ejecutor `local` solo para desarrollo |
+
+## Publicar en internet
+
+Consulta **[DESPLIEGUE.md](DESPLIEGUE.md)**: guía paso a paso, gratis y sin tarjeta, con Render, MongoDB Atlas, Judge0 en RapidAPI y UptimeRobot.
 
 ## Arranque rápido en Windows
 
@@ -160,4 +164,4 @@ server/                Express + Mongo
 - [x] **Fase 2**: cuentas (registro/login, y pasar el progreso de invitado a la cuenta), rachas y estadísticas
 - [x] **Fase 3**: generación diaria de retos con un agente programado (sin clave de API), validada con la referencia y una fuerza bruta
 - [x] **Fase 4**: panel de administración para revisar, editar y publicar retos
-- [ ] **Fase 5**: despliegue
+- [x] **Fase 5**: despliegue gratis en Render + MongoDB Atlas + Judge0 (RapidAPI) + UptimeRobot, explicado en [DESPLIEGUE.md](DESPLIEGUE.md)

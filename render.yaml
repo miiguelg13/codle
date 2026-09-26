@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: codle
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start -w server
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_OPTIONS
+        value: --max-old-space-size=384
+      - key: MONGOMS_DISABLE_POSTINSTALL
+        value: "1"
+      - key: EXECUTOR
+        value: judge0
+      - key: APP_TIMEZONE
+        value: Europe/Madrid
+      - key: SEED_ON_START
+        value: if-empty
+      - key: JWT_SECRET
+        generateValue: true
+      - key: RETOS_UPLOAD_TOKEN
+        generateValue: true
+      - key: MONGODB_URI
+        sync: false
+      - key: JUDGE0_RAPIDAPI_KEY
+        sync: false
+      - key: ADMIN_EMAILS
+        sync: false

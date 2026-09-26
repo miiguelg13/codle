@@ -12,9 +12,13 @@
     "build": "npm run build -w server && npm run build -w client",
     "seed": "npm run seed -w server",
     "test": "npm test -w server",
-    "dev:local": "concurrently -n db,api,web -c green,blue,magenta \"npm run db -w server\" \"npm run dev:seeded -w server\" \"npm run dev -w client -- --open\""
+    "dev:local": "concurrently -n db,api,web -c green,blue,magenta \"npm run db -w server\" \"npm run dev:seeded -w server\" \"npm run dev -w client -- --open\"",
+    "start": "npm start -w server"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

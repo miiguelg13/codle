@@ -15,7 +15,7 @@ import {
 import { formatValue, LANGUAGE_LABELS } from '../lib/format';
 import { useAuth } from '../lib/auth';
 import { errorMessage, levelKey, useI18n } from '../lib/i18n';
-import { MONACO_LANG } from '../lib/monaco';
+import { defineCodleTheme, MONACO_LANG } from '../lib/monaco';
 import { storage } from '../lib/storage';
 
 const LANGS: Language[] = ['python', 'javascript', 'java', 'cpp'];
@@ -160,7 +160,17 @@ export default function ProblemPage() {
   const submitRef = useRef(submit);
   runRef.current = run;
   submitRef.current = submit;
+  const [editorReady, setEditorReady] = useState(false);
+  const [editorSlow, setEditorSlow] = useState(false);
+  useEffect(() => {
+    if (editorReady) return;
+    const id = setTimeout(() => setEditorSlow(true), 15_000);
+    return () => clearTimeout(id);
+  }, [editorReady]);
+
   const onMount: OnMount = (editor, monaco) => {
+    setEditorReady(true);
+    setEditorSlow(false);
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => runRef.current());
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.Enter, () => submitRef.current());
   };
@@ -312,6 +322,13 @@ export default function ProblemPage() {
             </button>
           </div>
 
+          {editorSlow && !editorReady && (
+            <p className="error-box small editor-slow">
+              {lang === 'es'
+                ? 'El editor está tardando en cargar (se descarga de cdn.jsdelivr.net). Comprueba tu conexión o recarga la página.'
+                : 'The editor is taking long to load (it is downloaded from cdn.jsdelivr.net). Check your connection or reload the page.'}
+            </p>
+          )}
           <div className="editor-wrap">
             <Editor
               key={language}
@@ -320,6 +337,7 @@ export default function ProblemPage() {
               onChange={onCodeChange}
               onMount={onMount}
               theme="codle-dark"
+                  beforeMount={defineCodleTheme}
               options={{
                 fontFamily: "'JetBrains Mono', monospace",
                 fontSize: 14,

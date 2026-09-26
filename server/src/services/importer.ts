@@ -103,6 +103,18 @@ async function importDay(day: DayFile, file: string, report: ImportReport): Prom
   }
 }
 
+export async function importDayData(day: unknown, label = 'subida'): Promise<ImportReport> {
+  const report: ImportReport = { imported: [], updated: [], skipped: [], errors: [] };
+  const d = day as DayFile;
+  const err = validateDay(d, label);
+  if (err) {
+    report.errors.push(err);
+    return report;
+  }
+  await importDay(d, label, report);
+  return report;
+}
+
 export async function importRetos(dir = config.retosDir): Promise<ImportReport> {
   const report: ImportReport = { imported: [], updated: [], skipped: [], errors: [] };
   if (!existsSync(dir)) return report;
