@@ -63,6 +63,22 @@ npm run build && npm start -w server   # producción: Express sirve también el 
 python server/src/seed/generate_seed.py   # regenera problems.json desde las soluciones de referencia
 ```
 
+## Retos diarios generados por un agente
+
+Cada noche, a las 21:48 (hora de Madrid), una tarea programada lanza un agente de IA en este PC. Su trabajo es dejar preparados los retos de los próximos 3 días:
+
+1. Mira qué días faltan con `python3 tools/retos/build.py --status 3`.
+2. Escribe un *spec* por día en `retos/specs/AAAA-MM-DD.py`: 4 problemas con enunciado es/en, tests, solución de referencia y fuerza bruta.
+3. Lo construye con `python3 tools/retos/build.py retos/specs/AAAA-MM-DD.py`. El script calcula las salidas con la referencia, las contrasta con la fuerza bruta, valida tipos y tamaños, y escribe `retos/AAAA-MM-DD.json`.
+4. Hace commit del spec. El JSON no se versiona porque se puede regenerar a partir del spec.
+
+El servidor importa `retos/*.json` al arrancar y cada 5 minutos (`npm run import -w server` lo fuerza al momento). Además:
+
+- Un día que aún no ha llegado se vuelve a importar si su fichero cambia.
+- Los retos de ejemplo que nadie ha jugado se sustituyen por los generados.
+
+Para generar un día a mano, copia un spec existente, cámbialo y ejecuta `build.py`.
+
 ## Cómo funciona la ejecución
 
 ```
@@ -122,6 +138,6 @@ server/                Express + Mongo
 
 - [x] **Fase 1**: base, editor, ejecución en 4 lenguajes, retos diarios, días anteriores, i18n y tema oscuro
 - [x] **Fase 2**: cuentas (registro/login, y pasar el progreso de invitado a la cuenta), rachas y estadísticas
-- [ ] **Fase 3**: generación diaria con IA (API de Claude), validada con la solución de referencia en Judge0
+- [x] **Fase 3**: generación diaria de retos con un agente programado (sin clave de API), validada con la referencia y una fuerza bruta
 - [ ] **Fase 4**: panel de administración para revisar, editar y publicar retos
 - [ ] **Fase 5**: despliegue
