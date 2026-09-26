@@ -1,0 +1,19 @@
+{
+  "name": "codle",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Retos diarios de programación estilo Wordle",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,client -c blue,magenta \"npm run dev -w server\" \"npm run dev -w client\"",
+    "build": "npm run build -w server && npm run build -w client",
+    "seed": "npm run seed -w server",
+    "test": "npm test -w server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
