@@ -369,3 +369,20 @@ test('strings unicode y caracteres especiales viajan intactos', async () => {
     assert.deepEqual(r.outcomes.map((o) => o.verdict), tests.map(() => 'pass'), `${lang}: ${JSON.stringify(r.outcomes)}`);
   }
 });
+
+test('retos generados (retos/*.json): la referencia pasa por el harness', async () => {
+  const { readdirSync, existsSync } = await import('node:fs');
+  const dir = new URL('../../../retos/', import.meta.url);
+  if (!existsSync(dir)) return;
+  const files = readdirSync(dir).filter((f) => /^\d{4}-\d{2}-\d{2}\.json$/.test(f));
+  for (const f of files) {
+    const day = JSON.parse(readFileSync(new URL(f, dir), 'utf8')) as { problems: SeedProblem[] };
+    for (const p of day.problems) {
+      const tests = [...p.examples, ...p.tests];
+      const r = await runTests({ ...p, timeLimit: 20 }, 'python', p.referenceSolution.code, tests);
+      assert.equal(r.didNotStart, false, `${f} ${p.slug}: ${r.errorOutput}`);
+      const bad = r.outcomes.map((o, i) => (o.verdict === 'pass' ? null : `#${i} ${o.verdict} ${o.error ?? ''}`)).filter(Boolean);
+      assert.deepEqual(bad, [], `${f} ${p.slug}`);
+    }
+  }
+});

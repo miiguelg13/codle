@@ -11,7 +11,8 @@
     "test": "tsx --test src/tests/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "db": "tsx src/dev/mongo.ts",
-    "dev:seeded": "tsx src/seed/seed.ts --if-needed && tsx watch src/index.ts"
+    "dev:seeded": "tsx src/seed/seed.ts --if-needed && tsx watch src/index.ts",
+    "import": "tsx src/seed/import.ts"
   },
   "dependencies": {
     "cookie-parser": "^1.4.7",

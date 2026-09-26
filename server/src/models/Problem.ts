@@ -39,6 +39,8 @@ const problemSchema = new Schema(
       language: { type: String },
       code: { type: String },
     },
+    tags: { type: [String], default: [] },
+    importHash: { type: String },
   },
   { timestamps: true },
 );

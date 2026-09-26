@@ -1,4 +1,8 @@
 import 'dotenv/config';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 function num(name: string, def: number): number {
   const v = process.env[name];
@@ -18,6 +22,7 @@ export const config = {
   /** Zona horaria que define cuándo cambia "el día" */
   timezone: process.env.APP_TIMEZONE ?? 'Europe/Madrid',
   maxAttempts: num('MAX_ATTEMPTS', 5),
+  retosDir: process.env.RETOS_DIR ? path.resolve(process.env.RETOS_DIR) : path.join(ROOT, 'retos'),
 
   executor: (process.env.EXECUTOR ?? 'judge0') as 'judge0' | 'local',
 
