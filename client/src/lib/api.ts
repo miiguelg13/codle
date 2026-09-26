@@ -108,7 +108,25 @@ export class ApiError extends Error {
   }
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const isGet = !init?.method || init.method === 'GET';
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await requestOnce<T>(path, init);
+    } catch (err) {
+      const retriable =
+        isGet &&
+        attempt < 20 &&
+        (!(err instanceof ApiError) || (err.status >= 500 && err.code === 'server_unavailable'));
+      if (!retriable) throw err;
+      await sleep(1500);
+    }
+  }
+}
+
+async function requestOnce<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api${path}`, {
     credentials: 'same-origin',
     ...init,
@@ -123,7 +141,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
   if (!res.ok) {
     const d = (data ?? {}) as { error?: string; message?: string };
-    throw new ApiError(res.status, d.error ?? (res.status === 429 ? 'rate_limited' : 'error'), d.message ?? text);
+    const fallback = res.status === 429 ? 'rate_limited' : res.status >= 500 ? 'server_unavailable' : 'error';
+    throw new ApiError(res.status, d.error ?? fallback, d.message ?? text);
   }
   return data as T;
 }
