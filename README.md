@@ -58,6 +58,7 @@ Requisitos: **Node 20+** y una base de datos MongoDB.
 
 ```bash
 npm test                               # tests del motor en los 4 lenguajes (necesita python3, node, java y g++)
+TEST_MONGODB_URI=mongodb://127.0.0.1:27017 npm test   # además, tests de integración de la API
 npm run build && npm start -w server   # producción: Express sirve también el frontend
 python server/src/seed/generate_seed.py   # regenera problems.json desde las soluciones de referencia
 ```
@@ -103,11 +104,24 @@ server/                Express + Mongo
 | GET | `/api/problems/:id` | enunciado, ejemplos, plantillas y progreso |
 | POST | `/api/problems/:id/run` | ejecuta con los ejemplos (ilimitado, con límite de frecuencia) |
 | POST | `/api/problems/:id/submit` | envío evaluado con ejemplos + tests ocultos (máx. 5) |
+| GET | `/api/auth/me` | usuario actual (o `null` si es invitado) y racha |
+| POST | `/api/auth/register` | crea una cuenta y le pasa el progreso del invitado |
+| POST | `/api/auth/login` | inicia sesión con email o usuario y le pasa el progreso del invitado |
+| POST | `/api/auth/logout` | cierra sesión y vuelve a modo invitado |
+| GET | `/api/stats` | estadísticas: racha, distribución de envíos, por nivel y por lenguaje |
+
+### Cuentas y rachas
+
+- Se puede jugar sin cuenta: el progreso se guarda en el servidor asociado a una cookie de invitado.
+- Al registrarte o entrar, el progreso del invitado pasa a tu cuenta. Si los dos tienen el mismo reto, se conserva el de la cuenta salvo que el invitado lo resolviera y la cuenta no.
+- Las contraseñas se guardan con scrypt.
+- La **racha** cuenta los días seguidos en los que resuelves al menos un reto el mismo día en que se publica. Los días anteriores suman a las estadísticas pero no a la racha.
+- Un **día perfecto** es uno en el que resuelves los 4 retos ese mismo día.
 
 ## Hoja de ruta
 
 - [x] **Fase 1**: base, editor, ejecución en 4 lenguajes, retos diarios, días anteriores, i18n y tema oscuro
-- [ ] **Fase 2**: cuentas (registro/login, y pasar el progreso de invitado a la cuenta), rachas y estadísticas
+- [x] **Fase 2**: cuentas (registro/login, y pasar el progreso de invitado a la cuenta), rachas y estadísticas
 - [ ] **Fase 3**: generación diaria con IA (API de Claude), validada con la solución de referencia en Judge0
 - [ ] **Fase 4**: panel de administración para revisar, editar y publicar retos
 - [ ] **Fase 5**: despliegue

@@ -147,7 +147,59 @@ async function requestOnce<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
+export interface User {
+  id: string;
+  email: string;
+  username: string;
+  isAdmin: boolean;
+}
+
+export interface Streaks {
+  current: number;
+  max: number;
+  todayDone: boolean;
+}
+
+export interface Me {
+  user: User | null;
+  streak: Streaks;
+}
+
+export interface LevelStats {
+  level: number;
+  attempted: number;
+  solved: number;
+  failed: number;
+  distribution: number[];
+}
+
+export interface Stats {
+  today: string;
+  maxAttempts: number;
+  attempted: number;
+  solved: number;
+  failed: number;
+  inProgress: number;
+  submissions: number;
+  solveRate: number;
+  daysPlayed: number;
+  perfectDays: number;
+  streak: Streaks;
+  distribution: number[];
+  levels: LevelStats[];
+  languages: Partial<Record<Language, number>>;
+}
+
+const post = (body: unknown): RequestInit => ({ method: 'POST', body: JSON.stringify(body) });
+
 export const api = {
+  me: () => request<Me>('/auth/me'),
+  register: (email: string, username: string, password: string) =>
+    request<{ user: User; merged: number }>('/auth/register', post({ email, username, password })),
+  login: (login: string, password: string) =>
+    request<{ user: User; merged: number }>('/auth/login', post({ login, password })),
+  logout: () => request<{ ok: true }>('/auth/logout', post({})),
+  stats: () => request<Stats>('/stats'),
   meta: () => request<Meta>('/meta'),
   calendar: () => request<{ today: string; days: CalendarDay[] }>('/calendar'),
   day: (date: string) => request<DaySummary>(`/days/${date}`),

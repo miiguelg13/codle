@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { AttemptTiles } from '../components/Tiles';
 import { api, type DaySummary, type Progress } from '../lib/api';
 import { addDays, dayNumber, formatDate } from '../lib/format';
+import { useAuth } from '../lib/auth';
 import { errorMessage, levelKey, useI18n } from '../lib/i18n';
 
 function useCountdown(ms: number | null) {
@@ -30,6 +31,9 @@ function statusText(t: ReturnType<typeof useI18n>['t'], p: Progress): string {
 export default function DayPage() {
   const { date: dateParam } = useParams();
   const { t, lang } = useI18n();
+  const { user } = useAuth();
+  const location = useLocation();
+  const merged = (location.state as { merged?: number } | null)?.merged;
   const [day, setDay] = useState<DaySummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [nextMs, setNextMs] = useState<number | null>(null);
@@ -45,7 +49,7 @@ export default function DayPage() {
     return () => {
       alive = false;
     };
-  }, [dateParam, t]);
+  }, [dateParam, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     api.meta().then((m) => setNextMs(m.msUntilNextDay)).catch(() => {});
@@ -61,6 +65,7 @@ export default function DayPage() {
 
   return (
     <main className="page day-page">
+      {merged ? <p className="notice ok small">{t('mergedNote', { n: merged })}</p> : null}
       <section className="day-head">
         <div className="day-nav">
           <Link to={`/day/${prev}`} className="icon-btn" aria-label="←">

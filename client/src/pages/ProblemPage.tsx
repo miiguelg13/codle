@@ -13,6 +13,7 @@ import {
   type SubmitResponse,
 } from '../lib/api';
 import { formatValue, LANGUAGE_LABELS } from '../lib/format';
+import { useAuth } from '../lib/auth';
 import { errorMessage, levelKey, useI18n } from '../lib/i18n';
 import { MONACO_LANG } from '../lib/monaco';
 import { storage } from '../lib/storage';
@@ -42,6 +43,7 @@ export default function ProblemPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const { t, lang } = useI18n();
+  const { refresh: refreshAuth } = useAuth();
 
   const [problem, setProblem] = useState<ProblemDetail | null>(null);
   const [day, setDay] = useState<DaySummary | null>(null);
@@ -141,7 +143,10 @@ export default function ProblemPage() {
         d ? { ...d, problems: d.problems.map((x) => (x.id === problem.id ? { ...x, progress: r.progress } : x)) } : d,
       );
       if (r.status === 'ok') {
-        if (r.solved) setModal('solved');
+        if (r.solved) {
+          setModal('solved');
+          void refreshAuth(); // la racha puede haber cambiado
+        }
         else if (r.progress.finished) setModal('failed');
       }
     } catch (e) {
@@ -149,7 +154,7 @@ export default function ProblemPage() {
     } finally {
       setBusy(null);
     }
-  }, [problem, busy, language, code, t]);
+  }, [problem, busy, language, code, t, refreshAuth]);
 
   const runRef = useRef(run);
   const submitRef = useRef(submit);

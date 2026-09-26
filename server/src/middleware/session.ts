@@ -42,7 +42,11 @@ export function session(req: Request, res: Response, next: NextFunction): void {
       // cookie inválida o caducada: se crea una nueva
     }
   }
+  startGuestSession(req, res);
+  next();
+}
+
+export function startGuestSession(req: Request, res: Response): void {
   req.playerId = `g:${randomUUID()}`;
   setSessionCookie(res, req.playerId);
-  next();
 }

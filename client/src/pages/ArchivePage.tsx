@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, type CalendarDay } from '../lib/api';
+import { useAuth } from '../lib/auth';
 import { errorMessage, useI18n } from '../lib/i18n';
 
 interface MonthGrid {
@@ -35,6 +36,7 @@ function buildMonths(first: string, last: string): MonthGrid[] {
 
 export default function ArchivePage() {
   const { t } = useI18n();
+  const { user } = useAuth();
   const [data, setData] = useState<{ today: string; days: CalendarDay[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,7 +45,7 @@ export default function ArchivePage() {
       .calendar()
       .then(setData)
       .catch((e) => setError(errorMessage(t, e)));
-  }, [t]);
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const byDate = useMemo(() => new Map((data?.days ?? []).map((d) => [d.date, d])), [data]);
   const months = useMemo(() => {

@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { session } from './middleware/session.js';
 import { api, errorHandler } from './routes/api.js';
+import { auth, stats } from './routes/auth.js';
 
 export function createApp() {
   const app = express();
@@ -16,6 +17,8 @@ export function createApp() {
   app.get('/api/health', (_req, res) => {
     res.json({ ok: true });
   });
+  app.use('/api/auth', session, auth);
+  app.use('/api/stats', session, stats);
   app.use('/api', session, api);
 
   const clientDist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../client/dist');

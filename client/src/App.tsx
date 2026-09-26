@@ -3,7 +3,9 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { useI18n } from './lib/i18n';
 import ArchivePage from './pages/ArchivePage';
+import AuthPage from './pages/AuthPage';
 import DayPage from './pages/DayPage';
+import StatsPage from './pages/StatsPage';
 
 const ProblemPage = lazy(() => import('./pages/ProblemPage'));
 
@@ -24,6 +26,8 @@ export function App() {
           <Route index element={<DayPage />} />
           <Route path="day/:date" element={<DayPage />} />
           <Route path="archive" element={<ArchivePage />} />
+          <Route path="stats" element={<StatsPage />} />
+          <Route path="login" element={<AuthPage />} />
           <Route
             path="problem/:id"
             element={
