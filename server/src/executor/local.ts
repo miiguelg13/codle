@@ -18,7 +18,11 @@ const MAX_OUTPUT = 5 * 1024 * 1024;
 function run(cmd: string, args: string[], opts: { cwd: string; stdin?: string; timeoutMs: number }): Promise<ProcResult> {
   return new Promise((resolve) => {
     const started = Date.now();
-    const child = spawn(cmd, args, { cwd: opts.cwd, windowsHide: true });
+    const child = spawn(cmd, args, {
+      cwd: opts.cwd,
+      windowsHide: true,
+      env: { ...process.env, PYTHONIOENCODING: 'utf-8', PYTHONUTF8: '1' },
+    });
     let stdout = '';
     let stderr = '';
     let timedOut = false;
