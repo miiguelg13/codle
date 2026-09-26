@@ -30,6 +30,14 @@ async function main() {
   }
 
   await connectDb();
+  if (process.argv.includes('--if-needed')) {
+    const hasToday = await Problem.exists({ date: t, status: 'published' });
+    if (hasToday) {
+      console.log(`[seed] ya hay retos para hoy (${t}), no hace falta cargar los de ejemplo`);
+      await mongoose.disconnect();
+      return;
+    }
+  }
   const old = await Problem.find({ source: 'seed' }).select('_id');
   await Progress.deleteMany({ problemId: { $in: old.map((o) => o._id) } });
   await Problem.deleteMany({ source: 'seed' });

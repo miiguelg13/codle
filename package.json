@@ -11,7 +11,8 @@
     "dev": "concurrently -n server,client -c blue,magenta \"npm run dev -w server\" \"npm run dev -w client\"",
     "build": "npm run build -w server && npm run build -w client",
     "seed": "npm run seed -w server",
-    "test": "npm test -w server"
+    "test": "npm test -w server",
+    "dev:local": "concurrently -n db,api,web -c green,blue,magenta \"npm run db -w server\" \"npm run dev:seeded -w server\" \"npm run dev -w client -- --open\""
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

@@ -32,9 +32,13 @@ function run(cmd: string, args: string[], opts: { cwd: string; stdin?: string; t
     child.stderr.on('data', (d) => {
       if (stderr.length < MAX_OUTPUT) stderr += d.toString('utf8');
     });
-    child.on('error', (err) => {
+    child.on('error', (err: NodeJS.ErrnoException) => {
       clearTimeout(timer);
-      resolve({ code: -1, stdout, stderr: stderr + String(err), timedOut, ms: Date.now() - started });
+      const msg =
+        err.code === 'ENOENT'
+          ? `No se encuentra el comando "${cmd}" en este equipo. Instálalo o indica su ruta en server/.env (LOCAL_PYTHON, LOCAL_NODE, LOCAL_JAVAC, LOCAL_JAVA, LOCAL_GPP).`
+          : String(err);
+      resolve({ code: -1, stdout, stderr: stderr + msg, timedOut, ms: Date.now() - started });
     });
     child.on('close', (code) => {
       clearTimeout(timer);

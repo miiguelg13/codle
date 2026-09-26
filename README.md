@@ -13,7 +13,21 @@ Cada día hay **4 retos** (Fácil, Medio, Difícil y Experto). Se resuelven en u
 | Base de datos | MongoDB (Mongoose) |
 | Ejecución de código | Judge0 (API), o un ejecutor `local` solo para desarrollo |
 
-## Puesta en marcha (Windows, macOS o Linux)
+## Arranque rápido en Windows
+
+Haz **doble clic en `iniciar.bat`**. El script:
+
+1. Instala Node.js si no está (con winget).
+2. Crea `server/.env` en modo local.
+3. Instala las dependencias y descarga MongoDB la primera vez (sin Docker ni instalación).
+4. Arranca la base de datos, la API y la web.
+5. Abre http://localhost:5173.
+
+Para pararlo, pulsa `Ctrl+C` en la ventana. Los registros quedan en `logs/` y los datos en `.data/`.
+
+En modo local, cada lenguaje necesita su compilador instalado: Python, Java (JDK) y g++ (MinGW) para C++. JavaScript funciona siempre, porque usa Node.
+
+## Puesta en marcha manual (Windows, macOS o Linux)
 
 Requisitos: **Node 20+** y una base de datos MongoDB.
 
@@ -37,6 +51,7 @@ Requisitos: **Node 20+** y una base de datos MongoDB.
    npm run seed     # 12 retos de ejemplo: hoy, ayer y anteayer
    npm run dev      # servidor en :4000 y web en http://localhost:5173
    ```
+   Otra opción es `npm run dev:local`, que además arranca un MongoDB local embebido (sin Docker) y carga los retos de ejemplo si hoy no hay ninguno.
    Mientras no esté hecha la generación con IA (fase 3), vuelve a lanzar `npm run seed` otro día para mover los retos de ejemplo a las fechas actuales.
 
 ### Otros comandos
