@@ -100,6 +100,11 @@ function AccountMenu() {
               <Link to="/stats" role="menuitem">
                 {t('stats')}
               </Link>
+              {user.isAdmin && (
+                <Link to="/admin" role="menuitem">
+                  ⚙ Admin
+                </Link>
+              )}
             </>
           ) : (
             <>

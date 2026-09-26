@@ -40,8 +40,8 @@ describe('API', { skip: !MONGO && 'define TEST_MONGODB_URI para ejecutar los tes
         headers: { 'content-type': 'application/json', ...(this.cookie ? { cookie: this.cookie } : {}) },
         body: body === undefined ? undefined : JSON.stringify(body),
       });
-      const set = res.headers.get('set-cookie');
-      if (set) this.cookie = set.split(';')[0];
+      const set = res.headers.getSetCookie();
+      if (set.length) this.cookie = set[set.length - 1].split(';')[0];
       const data = await res.json();
       return { status: res.status, data };
     }
@@ -56,6 +56,7 @@ describe('API', { skip: !MONGO && 'define TEST_MONGODB_URI para ejecutar los tes
     process.env.MONGODB_URI = `${MONGO!.replace(/\/$/, '')}/codle_test_${Date.now()}`;
     const { config } = await import('../config.js');
     config.mongoUri = process.env.MONGODB_URI;
+    config.adminEmails = ['jefa@example.com'];
     setExecutor(new LocalExecutor());
     await mongoose.connect(config.mongoUri);
     const seed = JSON.parse(readFileSync(new URL('../seed/problems.json', import.meta.url), 'utf8'));
@@ -147,5 +148,79 @@ describe('API', { skip: !MONGO && 'define TEST_MONGODB_URI para ejecutar los tes
     assert.equal(r.data.error, 'invalid_password');
     r = await c.call('POST', '/auth/register', { email: 'no-es-email', username: 'bbb', password: 'secreto123' });
     assert.equal(r.data.error, 'invalid_email');
+  });
+
+  test('panel de admin', async () => {
+    const anon = new Client();
+    let r = await anon.call('GET', '/admin/overview');
+    assert.equal(r.status, 401);
+
+    const normal = new Client();
+    await normal.call('POST', '/auth/register', { email: 'normal@example.com', username: 'normal', password: 'secreto123' });
+    r = await normal.call('GET', '/admin/overview');
+    assert.equal(r.status, 403);
+
+    const jefa = new Client();
+    r = await jefa.call('POST', '/auth/register', { email: 'jefa@example.com', username: 'jefa', password: 'secreto123' });
+    assert.equal(r.data.user.isAdmin, true);
+    r = await jefa.call('GET', '/admin/overview');
+    assert.equal(r.status, 200, JSON.stringify(r.data));
+    assert.equal(r.data.nextDays.length, 8);
+
+    r = await jefa.call('GET', '/admin/problems');
+    assert.ok(r.data.length >= 2);
+    const hoy = r.data.find((p: { slug: string }) => p.slug === 'fizz-hoy');
+    assert.ok(hoy.players >= 1);
+
+    const draft = {
+      slug: 'doble',
+      date: addDays(today(), 5),
+      level: 2,
+      status: 'draft',
+      title: { es: 'Doble', en: 'Double' },
+      statement: { es: 'Devuelve `2 * n`.', en: 'Return `2 * n`.' },
+      constraints: [],
+      tags: ['mates'],
+      signature: { functionName: 'double', params: [{ name: 'n', type: 'int' }], returnType: 'long' },
+      compare: 'exact',
+      timeLimit: 5,
+      examples: [{ input: [2] }],
+      tests: [{ input: [0] }, { input: [2147483647] }],
+      referenceSolution: { language: 'python', code: 'class Solution:\n    def double(self, n):\n        return 2 * n' },
+    };
+    r = await jefa.call('POST', '/admin/tools/compute-outputs', { problem: draft });
+    assert.equal(r.status, 200, JSON.stringify(r.data));
+    assert.deepEqual(r.data.tests.map((c: { output: number }) => c.output), [0, 4294967294]);
+    const full = { ...draft, examples: r.data.examples, tests: r.data.tests };
+
+    r = await jefa.call('POST', '/admin/problems', { ...draft });
+    assert.equal(r.status, 400, 'sin salidas no se puede guardar');
+    r = await jefa.call('POST', '/admin/problems', full);
+    assert.equal(r.status, 201, JSON.stringify(r.data));
+    const id = r.data.id;
+
+    r = await jefa.call('POST', '/admin/tools/try', { problem: full, language: 'javascript', code: 'function double(n) { return n * 2; }' });
+    assert.deepEqual(r.data.results.map((x: { verdict: string }) => x.verdict), ['pass', 'pass', 'pass']);
+    r = await jefa.call('POST', '/admin/tools/try', { problem: full, language: 'javascript', code: 'function double(n) { return (n * 2) | 0; }' });
+    assert.deepEqual(r.data.results.map((x: { verdict: string }) => x.verdict), ['pass', 'pass', 'fail']);
+
+    r = await anon.call('GET', `/problems/${id}`);
+    assert.equal(r.status, 404);
+
+    r = await jefa.call('POST', `/admin/problems/${id}/status`, { status: 'published' });
+    assert.equal(r.data.status, 'published');
+    r = await jefa.call('PUT', `/admin/problems/${id}`, { ...full, title: { es: 'Doble!', en: 'Double!' }, status: 'published' });
+    assert.equal(r.data.title.es, 'Doble!');
+
+    r = await jefa.call('POST', '/admin/problems', { ...full, slug: 'doble-2', status: 'published' });
+    assert.equal(r.status, 409);
+    assert.equal(r.data.error, 'slot_taken');
+    r = await jefa.call('POST', '/admin/problems', { ...full, status: 'draft' });
+    assert.equal(r.data.error, 'slug_taken');
+
+    r = await jefa.call('DELETE', `/admin/problems/${hoy.id}`);
+    assert.equal(r.status, 409, 'con progreso no se borra');
+    r = await jefa.call('DELETE', `/admin/problems/${id}`);
+    assert.equal(r.status, 200);
   });
 });

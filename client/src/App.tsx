@@ -8,6 +8,8 @@ import DayPage from './pages/DayPage';
 import StatsPage from './pages/StatsPage';
 
 const ProblemPage = lazy(() => import('./pages/ProblemPage'));
+const AdminPage = lazy(() => import('./pages/admin/AdminPage'));
+const AdminEditPage = lazy(() => import('./pages/admin/AdminEditPage'));
 
 function Loading() {
   const { t } = useI18n();
@@ -28,6 +30,22 @@ export function App() {
           <Route path="archive" element={<ArchivePage />} />
           <Route path="stats" element={<StatsPage />} />
           <Route path="login" element={<AuthPage />} />
+          <Route
+            path="admin"
+            element={
+              <Suspense fallback={<Loading />}>
+                <AdminPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="admin/problems/:id"
+            element={
+              <Suspense fallback={<Loading />}>
+                <AdminEditPage />
+              </Suspense>
+            }
+          />
           <Route
             path="problem/:id"
             element={

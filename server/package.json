@@ -12,7 +12,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "db": "tsx src/dev/mongo.ts",
     "dev:seeded": "tsx src/seed/seed.ts --if-needed && tsx watch src/index.ts",
-    "import": "tsx src/seed/import.ts"
+    "import": "tsx src/seed/import.ts",
+    "make-admin": "tsx src/seed/make-admin.ts"
   },
   "dependencies": {
     "cookie-parser": "^1.4.7",

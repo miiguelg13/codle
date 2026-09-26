@@ -79,6 +79,26 @@ El servidor importa `retos/*.json` al arrancar y cada 5 minutos (`npm run import
 
 Para generar un día a mano, copia un spec existente, cámbialo y ejecuta `build.py`.
 
+## Panel de administración (`/admin`)
+
+**Acceso.** Tienes dos formas:
+- Pon tu email en `ADMIN_EMAILS` de `server/.env` y reinicia el servidor.
+- O ejecuta `npm run make-admin -w server -- <email|usuario>`.
+
+Una vez dentro, verás un enlace **⚙ Admin** en el menú de tu cuenta.
+
+**Qué ofrece:**
+- **Resumen:** usuarios, jugadores, envíos de las últimas 24 h, retos por estado y cuántos retos hay publicados en los próximos 8 días. Esto último sirve para ver si al agente le ha faltado algún día.
+- **Listado:** filtros por estado, fechas y texto. Por cada reto, jugadores, resueltos y envíos. Botones para publicar o retirar.
+- **Editor de retos:**
+  - Datos y firma.
+  - Enunciado en español e inglés, con vista previa.
+  - Casos en JSON. Escribe solo los `input` y pulsa **Recalcular salidas** para que la solución de referencia rellene los `output`.
+  - Solución de referencia.
+  - **Probar una solución** contra todos los casos, sin contar intentos. Sirve, por ejemplo, para comprobar que una solución O(n²) no pasa.
+- **Importar ahora** fuerza la lectura de `retos/*.json`. Los retos del agente que edites a mano ya no se sobrescriben al reimportar.
+- **Borrar** un reto solo es posible si nadie lo ha jugado. Si ya lo ha jugado alguien, se retira.
+
 ## Cómo funciona la ejecución
 
 ```
@@ -139,5 +159,5 @@ server/                Express + Mongo
 - [x] **Fase 1**: base, editor, ejecución en 4 lenguajes, retos diarios, días anteriores, i18n y tema oscuro
 - [x] **Fase 2**: cuentas (registro/login, y pasar el progreso de invitado a la cuenta), rachas y estadísticas
 - [x] **Fase 3**: generación diaria de retos con un agente programado (sin clave de API), validada con la referencia y una fuerza bruta
-- [ ] **Fase 4**: panel de administración para revisar, editar y publicar retos
+- [x] **Fase 4**: panel de administración para revisar, editar y publicar retos
 - [ ] **Fase 5**: despliegue

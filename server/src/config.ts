@@ -22,6 +22,10 @@ export const config = {
   /** Zona horaria que define cuándo cambia "el día" */
   timezone: process.env.APP_TIMEZONE ?? 'Europe/Madrid',
   maxAttempts: num('MAX_ATTEMPTS', 5),
+  adminEmails: (process.env.ADMIN_EMAILS ?? '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean),
   retosDir: process.env.RETOS_DIR ? path.resolve(process.env.RETOS_DIR) : path.join(ROOT, 'retos'),
 
   executor: (process.env.EXECUTOR ?? 'judge0') as 'judge0' | 'local',

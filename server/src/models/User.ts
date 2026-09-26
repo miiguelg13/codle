@@ -1,4 +1,5 @@
 import mongoose, { Schema, type InferSchemaType } from 'mongoose';
+import { config } from '../config.js';
 
 const userSchema = new Schema(
   {
@@ -15,6 +16,10 @@ const userSchema = new Schema(
 export type UserDoc = InferSchemaType<typeof userSchema> & { _id: mongoose.Types.ObjectId };
 export const User = mongoose.model('User', userSchema);
 
+export function isAdminUser(u: Pick<UserDoc, 'email' | 'isAdmin'>): boolean {
+  return !!u.isAdmin || config.adminEmails.includes(u.email.toLowerCase());
+}
+
 export function publicUser(u: Pick<UserDoc, '_id' | 'email' | 'username' | 'isAdmin'>) {
-  return { id: String(u._id), email: u.email, username: u.username, isAdmin: !!u.isAdmin };
+  return { id: String(u._id), email: u.email, username: u.username, isAdmin: isAdminUser(u) };
 }

@@ -80,6 +80,10 @@ async function importDay(day: DayFile, file: string, report: ImportReport): Prom
     }
     if (existing.source === 'ai' && existing.slug === p.slug) {
       if (existing.importHash === hash) continue; // ya importado, sin cambios
+      if (!existing.importHash) {
+        report.skipped.push(`${key}: editado a mano en el panel de admin, no se sobrescribe`);
+        continue;
+      }
       if (day.date <= t) {
         report.skipped.push(`${key}: el día ya ha empezado, no se modifica`);
         continue;
