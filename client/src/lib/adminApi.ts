@@ -41,6 +41,7 @@ export interface AdminProblem {
   examples: AdminCase[];
   tests: AdminCase[];
   referenceSolution: { language: Language; code: string } | null;
+  solutions?: { language: Language; code: string; status: 'pending' | 'ok' | 'failed'; error: string | null }[];
   editorial?: I18nText | null;
   players?: number;
 }

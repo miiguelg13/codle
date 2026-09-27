@@ -1,5 +1,5 @@
 import mongoose, { Schema, type InferSchemaType } from 'mongoose';
-import { VALUE_TYPES } from '../harness/types.js';
+import { LANGUAGES, VALUE_TYPES } from '../harness/types.js';
 
 const i18n = { es: { type: String, default: '' }, en: { type: String, default: '' } };
 
@@ -39,6 +39,19 @@ const problemSchema = new Schema(
       language: { type: String },
       code: { type: String },
     },
+    solutions: {
+      type: [
+        {
+          _id: false,
+          language: { type: String, enum: LANGUAGES, required: true },
+          code: { type: String, required: true },
+          status: { type: String, enum: ['pending', 'ok', 'failed'], default: 'pending' },
+          error: { type: String },
+          checkedAt: { type: Date },
+        },
+      ],
+      default: [],
+    },
     editorial: { type: new Schema(i18n, { _id: false }), required: false },
     tags: { type: [String], default: [] },
     importHash: { type: String },
@@ -47,6 +60,7 @@ const problemSchema = new Schema(
 );
 
 problemSchema.index({ date: 1, level: 1 }, { unique: true, partialFilterExpression: { status: 'published' } });
+problemSchema.index({ 'solutions.status': 1 });
 
 export type ProblemDoc = InferSchemaType<typeof problemSchema> & { _id: mongoose.Types.ObjectId };
 export const Problem = mongoose.model('Problem', problemSchema);
@@ -79,4 +93,4 @@ export function decodeCase(tc: StoredTestCase): DecodedTestCase {
   };
 }
 
-export const HEAVY_FIELDS = '-tests -examples -referenceSolution';
+export const HEAVY_FIELDS = '-tests -examples -referenceSolution -solutions';

@@ -71,6 +71,10 @@ describe('API', { skip: !MONGO && 'define TEST_MONGODB_URI para ejecutar los tes
       source: 'seed',
       examples: fizz.examples.map(encodeCase),
       tests: fizz.tests.slice(0, 2).map(encodeCase),
+      solutions: [
+        { language: 'javascript', code: '// js', status: 'ok' },
+        { language: 'go', code: '// go', status: 'pending' },
+      ],
     });
     const [a, b] = await Problem.create([mk(t, 1, 'fizz-hoy'), mk(addDays(t, -1), 1, 'fizz-ayer')]);
     fizzId = String(a._id);
@@ -95,8 +99,13 @@ describe('API', { skip: !MONGO && 'define TEST_MONGODB_URI para ejecutar los tes
 
     r = await c.call('POST', `/problems/${fizzId}/submit`, { language: 'python', code: FIZZ_BAD });
     assert.equal(r.data.solved, false);
+    assert.deepEqual(r.data.solutions, []);
     r = await c.call('POST', `/problems/${fizzId}/submit`, { language: 'python', code: FIZZ_OK });
     assert.equal(r.data.solved, true);
+    assert.deepEqual(
+      r.data.solutions.map((s: { language: string }) => s.language),
+      ['python', 'javascript'],
+    );
     r = await c.call('POST', `/problems/${yesterdayId}/submit`, { language: 'python', code: FIZZ_OK });
     assert.equal(r.data.solved, true);
 

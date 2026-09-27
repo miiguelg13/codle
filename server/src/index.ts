@@ -3,6 +3,7 @@ import { config } from './config.js';
 import { connectDb } from './db.js';
 import { getExecutor } from './executor/index.js';
 import { startRetosWatcher } from './services/importer.js';
+import { startSolutionVerifier } from './services/solutionVerifier.js';
 import { seedExamples } from './seed/examples.js';
 
 async function main() {
@@ -16,6 +17,7 @@ async function main() {
     await seedExamples({ ifNeeded: true }).catch((err) => console.warn('[seed] no se pudieron cargar los ejemplos', err));
   }
   startRetosWatcher();
+  if (config.verifySolutions) startSolutionVerifier();
 }
 
 main().catch((err) => {

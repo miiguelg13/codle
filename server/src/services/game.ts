@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { config } from '../config.js';
 import { runTests } from '../harness/runner.js';
+import { publicSolutions, type StoredSolution } from '../harness/solutions.js';
 import { allStarterCode } from '../harness/templates.js';
 import type { CompareMode, Language, Signature, TestCase } from '../harness/types.js';
 import { decodeCase, HEAVY_FIELDS, Problem, type StoredTestCase } from '../models/Problem.js';
@@ -32,6 +33,7 @@ type LeanProblem = {
   timeLimit: number;
   memoryLimit: number;
   referenceSolution?: { language?: string; code?: string };
+  solutions?: StoredSolution[];
   editorial?: { es?: string; en?: string } | null;
 };
 
@@ -172,7 +174,7 @@ export async function getProblem(id: string, playerId: string) {
     starterCode: allStarterCode(p.signature),
     lastCode,
     progress: pub,
-    referenceSolution: pub.finished ? (p.referenceSolution ?? null) : null,
+    solutions: pub.finished ? publicSolutions(p.referenceSolution, p.solutions) : [],
     editorial: pub.finished ? editorialOf(p) : null,
   };
 }
@@ -306,7 +308,7 @@ export async function submit(id: string, playerId: string, language: Language, c
     solved,
     firstFailure,
     progress: publicProgress(updated),
-    referenceSolution: publicProgress(updated).finished ? (p.referenceSolution ?? null) : null,
+    solutions: publicProgress(updated).finished ? publicSolutions(p.referenceSolution, p.solutions) : [],
     editorial: publicProgress(updated).finished ? editorialOf(p) : null,
   };
 }

@@ -75,8 +75,13 @@ export interface ProblemDetail {
   starterCode: Record<Language, string>;
   lastCode: Partial<Record<Language, string>>;
   progress: Progress;
-  referenceSolution: { language: string; code: string } | null;
+  solutions: OfficialSolution[];
   editorial?: I18nText | null;
+}
+
+export interface OfficialSolution {
+  language: Language;
+  code: string;
 }
 
 export interface RunCase {
@@ -111,7 +116,7 @@ export type SubmitResponse =
         error?: string;
         example?: { input: unknown[]; expected: unknown; actual?: unknown };
       } | null;
-      referenceSolution: { language: string; code: string } | null;
+      solutions: OfficialSolution[];
       editorial?: I18nText | null;
     };
 

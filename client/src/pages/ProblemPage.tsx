@@ -8,6 +8,7 @@ import {
   LANGUAGES,
   type DaySummary,
   type Language,
+  type OfficialSolution,
   type Param,
   type ProblemDetail,
   type RunResponse,
@@ -146,7 +147,7 @@ export default function ProblemPage() {
           ? {
               ...p,
               progress: r.progress,
-              referenceSolution: r.status === 'ok' ? (r.referenceSolution ?? p.referenceSolution) : p.referenceSolution,
+              solutions: r.status === 'ok' && r.solutions.length ? r.solutions : p.solutions,
               editorial: r.status === 'ok' ? (r.editorial ?? p.editorial) : p.editorial,
             }
           : p,
@@ -293,7 +294,7 @@ export default function ProblemPage() {
                   </>
                 )}
               </>
-            ) : problem.progress.finished && (problem.referenceSolution || problem.editorial) ? (
+            ) : problem.progress.finished && (problem.solutions.length > 0 || problem.editorial) ? (
               <>
                 <div className="editorial">
                   <h3>{t('editorialTitle')}</h3>
@@ -303,21 +304,8 @@ export default function ProblemPage() {
                     <p className="muted">{t('noEditorial')}</p>
                   )}
                 </div>
-                {problem.referenceSolution && (
-                  <>
-                    <div className="solution-lang">
-                      <h3>{t('officialCode')}</h3>
-                      <span className="badge">
-                        {LANGUAGE_LABELS[problem.referenceSolution.language as Language] ?? problem.referenceSolution.language}
-                      </span>
-                      <CopyButton text={problem.referenceSolution.code} />
-                    </div>
-                    <SolutionCode
-                      code={problem.referenceSolution.code}
-                      language={problem.referenceSolution.language as Language}
-                      theme={monacoTheme}
-                    />
-                  </>
+                {problem.solutions.length > 0 && (
+                  <OfficialSolutions solutions={problem.solutions} editorLanguage={language} theme={monacoTheme} />
                 )}
               </>
             ) : (
@@ -489,6 +477,54 @@ export default function ProblemPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function OfficialSolutions({
+  solutions: raw,
+  editorLanguage,
+  theme,
+}: {
+  solutions: OfficialSolution[];
+  editorLanguage: Language;
+  theme: string;
+}) {
+  const { t } = useI18n();
+  const [picked, setPicked] = useState<Language | null>(null);
+  // Mismo orden que el selector del editor.
+  const solutions = useMemo(
+    () => [...raw].sort((a, b) => LANGUAGES.indexOf(a.language) - LANGUAGES.indexOf(b.language)),
+    [raw],
+  );
+  const has = (l: Language | null) => !!l && solutions.some((s) => s.language === l);
+  const current = has(picked) ? picked! : has(editorLanguage) ? editorLanguage : (solutions.find((s) => s.language === 'python') ?? solutions[0]).language;
+  const sol = solutions.find((s) => s.language === current)!;
+  return (
+    <>
+      <div className="solution-lang">
+        <h3>{t('officialCode')}</h3>
+        <CopyButton text={sol.code} />
+      </div>
+      {solutions.length > 1 && (
+        <div className="seg solution-langs" role="tablist" aria-label={t('officialCode')}>
+          {solutions.map((s) => (
+            <button
+              key={s.language}
+              role="tab"
+              aria-selected={s.language === current}
+              className={s.language === current ? 'active' : ''}
+              onClick={() => setPicked(s.language)}
+            >
+              {LANGUAGE_LABELS[s.language] ?? s.language}
+            </button>
+          ))}
+        </div>
+      )}
+      {!has(editorLanguage) && (
+        <p className="muted small">{t('noSolutionInLang', { lang: LANGUAGE_LABELS[editorLanguage] ?? editorLanguage })}</p>
+      )}
+      <SolutionCode key={sol.language} code={sol.code} language={sol.language} theme={theme} />
+    </>
   );
 }
 

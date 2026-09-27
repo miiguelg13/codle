@@ -30,6 +30,7 @@ export const config = {
     .filter(Boolean),
   retosUploadToken: process.env.RETOS_UPLOAD_TOKEN ?? '',
   seedOnStart: process.env.SEED_ON_START ?? '',
+  verifySolutions: process.env.VERIFY_SOLUTIONS !== '0',
   runLimitPerMinute: num('RUN_LIMIT_PER_MINUTE', 20),
   submitLimitPerMinute: num('SUBMIT_LIMIT_PER_MINUTE', 10),
   retosDir: process.env.RETOS_DIR ? path.resolve(process.env.RETOS_DIR) : path.join(ROOT, 'retos'),

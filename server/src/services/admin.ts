@@ -10,11 +10,13 @@ import {
   type Language,
   type TestCase,
 } from '../harness/types.js';
+import type { StoredSolution } from '../harness/solutions.js';
 import { decodeCase, encodeCase, HEAVY_FIELDS, Problem, type StoredTestCase } from '../models/Problem.js';
 import { Progress } from '../models/Progress.js';
 import { User } from '../models/User.js';
 import { addDays, isValidDate, today } from './dates.js';
 import { HttpError } from './game.js';
+import { kickSolutionVerifier } from './solutionVerifier.js';
 
 const i18n = z.object({ es: z.string().max(20_000), en: z.string().max(20_000) });
 const testCase = z.object({
@@ -140,6 +142,7 @@ type StoredProblem = Omit<ProblemBody, 'examples' | 'tests'> & {
   source: string;
   examples: StoredTestCase[];
   tests: StoredTestCase[];
+  solutions?: StoredSolution[];
 };
 
 export async function getProblemFull(id: string) {
@@ -164,6 +167,7 @@ export async function getProblemFull(id: string) {
     examples: p.examples.map(decodeCase),
     tests: p.tests.map(decodeCase),
     referenceSolution: p.referenceSolution?.code ? p.referenceSolution : null,
+    solutions: (p.solutions ?? []).map((x) => ({ language: x.language, code: x.code, status: x.status, error: x.error ?? null })),
     editorial: p.editorial?.es || p.editorial?.en ? p.editorial : null,
     players: progress,
   };
@@ -206,7 +210,15 @@ export async function updateProblem(id: string, body: unknown) {
   const p = parseProblemBody(body);
   validateCases(p, true);
   await assertSlotFree(p, id);
-  await Problem.updateOne({ _id: id }, { $set: toDoc(p), $unset: { importHash: 1 } });
+  const sols = (await Problem.findById(id).select('solutions').lean<{ solutions?: StoredSolution[] }>())?.solutions ?? [];
+  await Problem.updateOne(
+    { _id: id },
+    {
+      $set: { ...toDoc(p), solutions: sols.map((x) => ({ language: x.language, code: x.code, status: 'pending' })) },
+      $unset: { importHash: 1 },
+    },
+  );
+  kickSolutionVerifier();
   return getProblemFull(id);
 }
 

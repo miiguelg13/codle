@@ -489,6 +489,36 @@ function Editor_() {
                   options={{ fontSize: 13, minimap: { enabled: false }, scrollBeyondLastLine: false, automaticLayout: true }}
                 />
               </div>
+              <h3>Soluciones en otros lenguajes</h3>
+              <p className="muted small">
+                Las escribe el agente (retos/specs/&lt;fecha&gt;/&lt;slug&gt;.&lt;ext&gt;) y el servidor las ejecuta contra todos
+                los tests. Solo se muestran a los jugadores las verificadas. Al guardar cambios se vuelven a verificar.
+              </p>
+              {p.solutions && p.solutions.length > 0 ? (
+                <ul className="admin-solutions">
+                  {p.solutions.map((s) => (
+                    <li key={s.language}>
+                      <span className={`sol-status sol-${s.status}`}>
+                        {s.status === 'ok' ? '✓ verificada' : s.status === 'failed' ? '✗ falla' : '… pendiente'}
+                      </span>{' '}
+                      <strong>{LANGUAGE_LABELS[s.language]}</strong>{' '}
+                      <button
+                        className="how-link"
+                        onClick={() => {
+                          setTryLang(s.language);
+                          setTryCode(s.code);
+                          setTab('probar');
+                        }}
+                      >
+                        abrir en Probar
+                      </button>
+                      {s.error && <pre className="err-pre">{s.error}</pre>}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="muted small">Este reto no tiene soluciones en otros lenguajes.</p>
+              )}
             </>
           )}
 

@@ -3,10 +3,12 @@ import { existsSync } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { config } from '../config.js';
+import { mergeSolutions, validateSolutions, type StoredSolution } from '../harness/solutions.js';
 import { validateSignature, validateTestCase, type Signature, type TestCase } from '../harness/types.js';
 import { encodeCase, Problem } from '../models/Problem.js';
 import { Progress } from '../models/Progress.js';
 import { isValidDate, today } from './dates.js';
+import { kickSolutionVerifier } from './solutionVerifier.js';
 
 interface DayFile {
   date: string;
@@ -18,6 +20,7 @@ interface DayFile {
     examples: TestCase[];
     tests: TestCase[];
     editorial?: { es: string; en: string };
+    solutions?: { language: string; code: string }[];
   })[];
 }
 
@@ -36,6 +39,8 @@ function validateDay(day: DayFile, file: string): string | null {
     if (![1, 2, 3, 4].includes(p.level)) return `${label}: nivel inválido`;
     const sigErr = validateSignature(p.signature);
     if (sigErr) return `${label}: ${sigErr}`;
+    const solErr = validateSolutions(p.solutions, label);
+    if (solErr) return solErr;
     const all = [...(p.examples ?? []), ...(p.tests ?? [])];
     if (all.length === 0) return `${label}: sin tests`;
     for (let i = 0; i < all.length; i++) {
@@ -52,8 +57,9 @@ async function importDay(day: DayFile, file: string, report: ImportReport): Prom
   for (const p of day.problems) {
     const key = `${day.date} L${p.level} ${p.slug}`;
     const existing = await Problem.findOne({ date: day.date, level: p.level, status: 'published' })
-      .select('_id slug source importHash')
-      .lean<{ _id: unknown; slug: string; source: string; importHash?: string }>();
+      .select('_id slug source importHash solutions')
+      .lean<{ _id: unknown; slug: string; source: string; importHash?: string; solutions?: StoredSolution[] }>();
+    const solutions = mergeSolutions(p.solutions, existing?.slug === p.slug ? existing.solutions : undefined);
 
     const doc = {
       slug: p.slug,
@@ -70,6 +76,7 @@ async function importDay(day: DayFile, file: string, report: ImportReport): Prom
       tests: p.tests.map((e) => encodeCase(e as Parameters<typeof encodeCase>[0])),
       timeLimit: p.timeLimit ?? 5,
       referenceSolution: p.referenceSolution,
+      solutions,
       ...(p.editorial ? { editorial: p.editorial } : {}),
       importHash: hash,
       tags: p.tags ?? [],
@@ -87,15 +94,21 @@ async function importDay(day: DayFile, file: string, report: ImportReport): Prom
         continue;
       }
       if (day.date <= t) {
-        if (p.editorial) {
-          await Problem.updateOne({ _id: existing._id }, { $set: { editorial: p.editorial, importHash: hash } });
-          report.updated.push(`${key} (solo la explicación: el día ya ha empezado)`);
+        if (p.editorial || p.solutions) {
+          await Problem.updateOne(
+            { _id: existing._id },
+            { $set: { ...(p.editorial ? { editorial: p.editorial } : {}), ...(p.solutions ? { solutions } : {}), importHash: hash } },
+          );
+          report.updated.push(`${key} (solo la explicación y las soluciones: el día ya ha empezado)`);
         } else {
           report.skipped.push(`${key}: el día ya ha empezado, no se modifica`);
         }
         continue;
       }
-      await Problem.replaceOne({ _id: existing._id }, doc);
+      await Problem.replaceOne(
+        { _id: existing._id },
+        { ...doc, solutions: solutions.map((x) => ({ language: x.language, code: x.code, status: 'pending' })) },
+      );
       report.updated.push(key);
       continue;
     }
@@ -108,6 +121,7 @@ async function importDay(day: DayFile, file: string, report: ImportReport): Prom
       report.skipped.push(`${key}: ya hay otro reto publicado (${existing.slug}, ${existing.source})`);
     }
   }
+  if (report.imported.length || report.updated.length) kickSolutionVerifier();
 }
 
 export async function importDayData(day: unknown, label = 'subida'): Promise<ImportReport> {

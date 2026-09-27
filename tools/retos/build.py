@@ -17,6 +17,11 @@ veces (niveles 1-4). Para cada problema:
     y el constructor lo salta.
 El spec puede usar `random` (ya sembrado con la fecha, así que es reproducible).
 
+Soluciones oficiales en los demás lenguajes: ficheros junto al spec, en una carpeta
+con la fecha: retos/specs/2026-09-27/<slug>.<ext> con ext = js, ts, java, cpp, cs, go, rs.
+Aquí solo se comprueba que existen y que definen la función; el servidor las ejecuta
+contra todos los tests antes de mostrarlas (las que fallan no se ven).
+
 Compatible con Python 3.8+ y sin dependencias externas.
 """
 import datetime as _dt
@@ -48,6 +53,39 @@ MAX_TEST_KB = 700              # entrada de un solo test
 MAX_PROBLEM_KB = 2000          # entrada de todos los casos de un problema
 MAX_OUTPUT_KB = 110            # salida esperada de un solo test (JSON)
 MAX_PROBLEM_OUTPUT_KB = 500
+
+
+SOLUTION_EXT = {"javascript": "js", "typescript": "ts", "java": "java", "cpp": "cpp",
+                "csharp": "cs", "go": "go", "rust": "rs"}
+MAX_SOLUTION_KB = 64
+
+
+def snake_case(name):
+    return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name).lower()
+
+
+def load_solutions(folder, slug, fn_name, label):
+    """Lee retos/specs/<fecha>/<slug>.<ext>. Devuelve (lista, avisos)."""
+    sols, warnings, missing = [], [], []
+    expected = {"rust": snake_case(fn_name), "csharp": fn_name[:1].upper() + fn_name[1:]}
+    for lang, ext in SOLUTION_EXT.items():
+        path = os.path.join(folder, f"{slug}.{ext}")
+        if not os.path.exists(path):
+            missing.append(lang)
+            continue
+        with open(path, encoding="utf-8") as f:
+            code = f.read()
+        if not code.strip():
+            raise SpecError(f"{label}: {os.path.relpath(path, ROOT)} está vacío")
+        if len(code.encode("utf-8")) > MAX_SOLUTION_KB * 1024:
+            raise SpecError(f"{label}: {os.path.relpath(path, ROOT)} pasa de {MAX_SOLUTION_KB} KB")
+        name = expected.get(lang, fn_name)
+        if not re.search(r"\b" + re.escape(name) + r"\b", code):
+            raise SpecError(f"{label}: {os.path.relpath(path, ROOT)} no define {name} (mira la plantilla de ese lenguaje)")
+        sols.append({"language": lang, "code": code.strip("\n") + "\n"})
+    if missing:
+        warnings.append(f"sin solución oficial en: {', '.join(missing)} (los jugadores de esos lenguajes solo verán la de Python)")
+    return sols, warnings
 
 
 class SpecError(Exception):
@@ -362,8 +400,14 @@ def build_spec(path):
             raise SpecError(f"el slug '{s}' ya existe (día {taken[s]}): elige otro problema o slug")
 
     problems, reports = [], []
+    sol_dir = os.path.join(os.path.dirname(os.path.abspath(path)), date)
     for i, p in enumerate(sorted(specs, key=lambda x: x["level"])):
         prob, rep = build_problem(p, i)
+        sols, warns = load_solutions(sol_dir, prob["slug"], prob["signature"]["functionName"], rep["label"])
+        if sols:
+            prob["solutions"] = sols
+        rep["warnings"].extend(warns)
+        rep["solutions"] = [s["language"] for s in sols]
         problems.append(prob)
         reports.append(rep)
 
@@ -425,7 +469,8 @@ def main(argv):
         return 1
     print(f"OK: {os.path.relpath(out, ROOT)}")
     for r in reports:
-        print(f"  {r['label']}: referencia {r['ref_time']:.2f}s, fuerza bruta contrastada en {r['brute_checked']} casos")
+        print(f"  {r['label']}: referencia {r['ref_time']:.2f}s, fuerza bruta contrastada en {r['brute_checked']} casos, "
+              f"soluciones en {1 + len(r['solutions'])} lenguajes")
         for w in r["warnings"]:
             print(f"    AVISO: {w}")
     return 0
