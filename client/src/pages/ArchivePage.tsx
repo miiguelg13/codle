@@ -69,7 +69,20 @@ export default function ArchivePage() {
   return (
     <main className="page archive-page">
       <h1>{t('archive')}</h1>
-      <p className="muted small">{t('calendarLegend')}</p>
+      <p className="archive-intro">
+        <span>
+          <i className="cell tone-pass" /> {t('calAll')}
+        </span>
+        <span>
+          <i className="cell tone-partial" /> {t('calSome')}
+        </span>
+        <span>
+          <i className="cell tone-none" /> {t('calTried')}
+        </span>
+        <span>
+          <i className="cell tone-empty" /> {t('calNone')}
+        </span>
+      </p>
       {months.length === 0 && <p className="empty">{t('noProblems')}</p>}
       <div className="months">
         {months.map((mg) => (

@@ -4,11 +4,13 @@ import { useAuth } from '../lib/auth';
 import { useI18n } from '../lib/i18n';
 import { useTheme } from '../lib/theme';
 import { storage } from '../lib/storage';
-import { HowToPlay } from './HowToPlay';
+import { CircleHelp, LogIn, LogOut, Moon, Settings, BarChart3, Sun, UserPlus } from 'lucide-react';
+import { HowToPlay, openHowToPlay } from './HowToPlay';
+import { Tally } from './Tally';
 
 function Logo() {
   const letters = ['C', 'O', 'D', 'L', 'E'];
-  const tones = ['tone-pass', 'tone-none', 'tone-partial', 'tone-pass', 'tone-none'];
+  const tones = ['tone-pass', 'tone-empty', 'tone-partial', 'tone-pass', 'tone-empty'];
   return (
     <Link to="/" className="logo" aria-label="Codle">
       {letters.map((l, i) => (
@@ -42,8 +44,8 @@ function ThemeToggle() {
       ? lang === 'es' ? 'Cambiar a modo claro' : 'Switch to light mode'
       : lang === 'es' ? 'Cambiar a modo oscuro' : 'Switch to dark mode';
   return (
-    <button className="theme-toggle" onClick={toggle} title={label} aria-label={label}>
-      {theme === 'dark' ? '☀️' : '🌙'}
+    <button className="icon-btn theme-btn" onClick={toggle} title={label} aria-label={label}>
+      {theme === 'dark' ? <Sun strokeWidth={1.75} /> : <Moon strokeWidth={1.75} />}
     </button>
   );
 }
@@ -57,15 +59,18 @@ function StreakChip() {
       to="/stats"
       className={`streak-chip ${streak.todayDone ? 'done' : streak.current ? 'pending' : ''}`}
       title={t('streakTitle')}
+      aria-label={`${t('streakField')}: ${streak.current}`}
     >
-      <span aria-hidden>🔥</span>
+      <span className="field hide-sm">{t('streakField')}</span>
+      <Tally n={streak.current} max={5} />
       <strong>{streak.current}</strong>
     </Link>
   );
 }
 
 function AccountMenu() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const { theme, toggle: toggleTheme } = useTheme();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -115,24 +120,33 @@ function AccountMenu() {
                 <span className="muted small">{user.email}</span>
               </div>
               <Link to="/stats" role="menuitem">
-                {t('stats')}
+                <BarChart3 strokeWidth={1.75} /> {t('stats')}
               </Link>
               {user.isAdmin && (
                 <Link to="/admin" role="menuitem">
-                  ⚙ Admin
+                  <Settings strokeWidth={1.75} /> Admin
                 </Link>
               )}
             </>
           ) : (
             <>
               <Link to={`/login?next=${next}`} role="menuitem">
-                {t('login')}
+                <LogIn strokeWidth={1.75} /> {t('login')}
               </Link>
               <Link to={`/login?mode=register&next=${next}`} role="menuitem">
-                {t('register')}
+                <UserPlus strokeWidth={1.75} /> {t('register')}
               </Link>
             </>
           )}
+          <button role="menuitem" onClick={() => { setOpen(false); openHowToPlay(); }}>
+            <CircleHelp strokeWidth={1.75} /> {lang === 'es' ? 'Cómo se juega' : 'How to play'}
+          </button>
+          <button role="menuitem" className="show-sm" onClick={toggleTheme}>
+            {theme === 'dark' ? <Sun strokeWidth={1.75} /> : <Moon strokeWidth={1.75} />}
+            {theme === 'dark'
+              ? lang === 'es' ? 'Modo claro' : 'Light mode'
+              : lang === 'es' ? 'Modo oscuro' : 'Dark mode'}
+          </button>
           <div className="menu-lang">
             <LangToggle />
           </div>
@@ -145,7 +159,7 @@ function AccountMenu() {
                 navigate('/');
               }}
             >
-              {t('logout')}
+              <LogOut strokeWidth={1.75} /> {t('logout')}
             </button>
           )}
         </div>
@@ -186,8 +200,8 @@ export function Layout() {
         </nav>
         <div className="topbar-right">
           <StreakChip />
-          <button className="theme-toggle" onClick={() => setHelp(true)} title={helpLabel} aria-label={helpLabel}>
-            ?
+          <button className="icon-btn help-btn" onClick={() => setHelp(true)} title={helpLabel} aria-label={helpLabel}>
+            <CircleHelp strokeWidth={1.75} />
           </button>
           <ThemeToggle />
           <div className="hide-sm">

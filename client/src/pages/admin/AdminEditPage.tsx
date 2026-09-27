@@ -1,3 +1,4 @@
+import './admin.css';
 import Editor from '@monaco-editor/react';
 import { useEffect, useMemo, useState } from 'react';
 import Markdown from 'react-markdown';

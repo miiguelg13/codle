@@ -2,6 +2,8 @@ import Editor, { type OnMount } from '@monaco-editor/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Markdown from 'react-markdown';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, ArrowRight, Check, Copy, Lock, Play, RotateCcw, Send, Timer, X } from 'lucide-react';
+import { Boxed } from '../components/Boxed';
 import { AttemptTiles, SubmissionGrid } from '../components/Tiles';
 import {
   api,
@@ -62,6 +64,7 @@ export default function ProblemPage() {
   const [lastSubmit, setLastSubmit] = useState<SubmitResponse | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [modal, setModal] = useState<null | 'solved' | 'failed'>(null);
+  const [justSolved, setJustSolved] = useState(false);
   const [leftPct, setLeftPct] = useState(42);
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
@@ -79,6 +82,7 @@ export default function ProblemPage() {
     setRunResult(null);
     setLastSubmit(null);
     setModal(null);
+    setJustSolved(false);
     setLeftTab('description');
     setBottomTab('result');
     api
@@ -157,6 +161,7 @@ export default function ProblemPage() {
       );
       if (r.status === 'ok') {
         if (r.solved) {
+          setJustSolved(true);
           setModal('solved');
           void refreshAuth(); // la racha puede haber cambiado
         }
@@ -222,7 +227,7 @@ export default function ProblemPage() {
     <div className="problem-page">
       <div className="problem-bar">
         <Link to={dayLink} className="back">
-          ← {t('back')}
+          <ArrowLeft strokeWidth={1.75} /> <span className="hide-sm">{t('back')}</span>
         </Link>
         <div className="level-pills">
           {(day?.problems ?? []).map((p) => (
@@ -230,9 +235,11 @@ export default function ProblemPage() {
               key={p.id}
               to={`/problem/${p.id}`}
               className={`pill level-${p.level} ${p.id === problem.id ? 'active' : ''} ${p.progress.solved ? 'solved' : ''}`}
+              aria-current={p.id === problem.id ? 'page' : undefined}
             >
-              {p.progress.solved ? '✓ ' : ''}
-              {t(levelKey(p.level))}
+              <span className="n">{p.level}</span>
+              <span className="lbl">{t(levelKey(p.level))}</span>
+              {p.progress.solved && <Check strokeWidth={2.25} aria-label={t('status_solved')} />}
             </Link>
           ))}
         </div>
@@ -246,7 +253,7 @@ export default function ProblemPage() {
               {t('description')}
             </button>
             <button className={leftTab === 'solution' ? 'active' : ''} onClick={() => setLeftTab('solution')}>
-              {progress.finished ? '' : '🔒 '}
+              {!progress.finished && <Lock strokeWidth={1.75} />}
               {t('solution')}
             </button>
           </div>
@@ -254,8 +261,13 @@ export default function ProblemPage() {
             {leftTab === 'description' ? (
               <>
                 <div className="statement-head">
-                  <span className={`badge level-${problem.level}`}>{t(levelKey(problem.level))}</span>
-                  <h1>{problem.title[lang] || problem.title.es}</h1>
+                  <h1>
+                    {progress.solved ? (
+                      <Boxed draw={justSolved && !modal}>{problem.title[lang] || problem.title.es}</Boxed>
+                    ) : (
+                      problem.title[lang] || problem.title.es
+                    )}
+                  </h1>
                 </div>
                 <Markdown>{problem.statement[lang] || problem.statement.es}</Markdown>
 
@@ -309,7 +321,9 @@ export default function ProblemPage() {
                 )}
               </>
             ) : (
-              <p className="locked">🔒 {t('solutionLocked')}</p>
+              <p className="locked">
+                <Lock strokeWidth={1.75} /> {t('solutionLocked')}
+              </p>
             )}
           </div>
         </section>
@@ -325,20 +339,43 @@ export default function ProblemPage() {
                 </option>
               ))}
             </select>
-            <button className="ghost" onClick={resetCode} title={t('reset')}>
-              ↺ <span className="hide-sm">{t('reset')}</span>
+            <button className="ghost" onClick={resetCode} title={t('reset')} aria-label={t('reset')}>
+              <RotateCcw strokeWidth={1.75} className="icon" /> <span className="hide-sm">{t('reset')}</span>
             </button>
             <div className="spacer" />
-            <button className="btn secondary" onClick={run} disabled={!!busy} title="Ctrl+Enter">
-              {busy === 'run' ? `${t('running')} ${elapsed}s` : `▶ ${t('run')}`}
+            <button
+              className={`btn secondary ${busy === 'run' ? 'busy' : ''}`}
+              onClick={run}
+              disabled={!!busy}
+              title={t('shortcutRun')}
+            >
+              {busy === 'run' ? (
+                `${t('running')} ${elapsed}s`
+              ) : (
+                <>
+                  <Play strokeWidth={2} /> {t('run')}
+                </>
+              )}
             </button>
             {progress.finished && busy !== 'submit' ? (
               <button className={`btn ${progress.solved ? 'done' : 'secondary'}`} disabled>
+                {progress.solved ? <Check strokeWidth={2.25} /> : <X strokeWidth={2} />}
                 {progress.solved ? t('solvedButton') : t('noAttemptsButton')}
               </button>
             ) : (
-              <button className="btn primary" onClick={submit} disabled={!!busy} title="Ctrl+Shift+Enter">
-                {busy === 'submit' ? `${t('submitting')} ${elapsed}s` : `${t('submit')} (${remaining})`}
+              <button
+                className={`btn primary ${busy === 'submit' ? 'busy' : ''}`}
+                onClick={submit}
+                disabled={!!busy}
+                title={t('shortcutSubmit')}
+              >
+                {busy === 'submit' ? (
+                  `${t('submitting')} ${elapsed}s`
+                ) : (
+                  <>
+                    <Send strokeWidth={2} /> {t('submit')} <span className="remaining">{remaining}</span>
+                  </>
+                )}
               </button>
             )}
           </div>
@@ -378,12 +415,24 @@ export default function ProblemPage() {
                 {t('testResult')}
               </button>
               <button className={bottomTab === 'submissions' ? 'active' : ''} onClick={() => setBottomTab('submissions')}>
-                {t('submissions')} ({progress.attempts.length}/{progress.maxAttempts})
+                {t('submissions')}{' '}
+                <span className="count">
+                  {progress.attempts.length}/{progress.maxAttempts}
+                </span>
               </button>
             </div>
             <div className="console-body">
               {actionError && <p className="error-box">{actionError}</p>}
-              {busy && elapsed >= 5 && <p className="muted small">⏳ {t('slowRunHint')}</p>}
+              {busy && (
+                <p className="working">
+                  <span className="dots" aria-hidden>
+                    <i />
+                    <i />
+                    <i />
+                  </span>
+                  {elapsed >= 5 ? t('slowRunHint') : busy === 'run' ? t('running') : t('submitting')}
+                </p>
+              )}
 
               {bottomTab === 'result' &&
                 (!runResult ? (
@@ -403,12 +452,13 @@ export default function ProblemPage() {
                           className={`case-tab ${i === activeCase ? 'active' : ''} ${c.verdict === 'pass' ? 'ok' : 'ko'}`}
                           onClick={() => setActiveCase(i)}
                         >
-                          {c.verdict === 'pass' ? '✓' : '✗'} {t('case')} {i + 1}
+                          <i aria-hidden /> {t('case')} {i + 1}
+                          <span className="sr-only">{t(`verdict_${c.verdict}`)}</span>
                         </button>
                       ))}
                       {runResult.timeMs != null && (
                         <span className="muted case-time" title={t('timeTotalHint')}>
-                          ⏱ {formatMs(runResult.timeMs)}
+                          <Timer strokeWidth={1.75} /> {formatMs(runResult.timeMs)}
                         </span>
                       )}
                     </div>
@@ -444,14 +494,22 @@ export default function ProblemPage() {
 
       {modal && (
         <div className="modal-backdrop" onClick={() => setModal(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2>{modal === 'solved' ? `🎉 ${t('solvedTitle')}` : t('failedTitle')}</h2>
+          <div className="modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-x" onClick={() => setModal(null)} aria-label={t('close')}>
+              <X strokeWidth={1.75} />
+            </button>
+            <h2>{modal === 'solved' ? t('solvedTitle') : t('failedTitle')}</h2>
+            {modal === 'solved' && (
+              <p className="modal-answer">
+                <Boxed draw>{problem.title[lang] || problem.title.es}</Boxed>
+              </p>
+            )}
             <p>
               {modal === 'solved'
                 ? t('solvedBody', { n: progress.attempts.length, max: progress.maxAttempts })
                 : t('failedBody')}
             </p>
-            <SubmissionGrid progress={progress} totalTests={problem.totalTests} />
+            <SubmissionGrid progress={progress} totalTests={problem.totalTests} animateLast />
             <div className="modal-actions">
               <button className="btn secondary" onClick={() => setModal(null)}>
                 {t('close')}
@@ -469,7 +527,7 @@ export default function ProblemPage() {
               )}
               {nextProblem && (
                 <button className="btn primary" onClick={() => navigate(`/problem/${nextProblem.id}`)}>
-                  {t('nextChallenge')} →
+                  {t('nextChallenge')} <ArrowRight strokeWidth={2} />
                 </button>
               )}
             </div>
@@ -571,7 +629,8 @@ function CopyButton({ text }: { text: string }) {
   };
   return (
     <button className="ghost copy-btn" onClick={copy}>
-      {done ? `✓ ${t('copied')}` : `⧉ ${t('copy')}`}
+      {done ? <Check strokeWidth={2} className="icon" /> : <Copy strokeWidth={1.75} className="icon" />}
+      {done ? t('copied') : t('copy')}
     </button>
   );
 }
@@ -633,7 +692,7 @@ function SubmitBanner({ r, params }: { r: SubmitResponse | null; params: Param[]
         <span className="muted">{t('passedTests', { p: r.attempt.passed, t: r.attempt.total })}</span>
         {r.attempt.timeMs != null && (
           <div className="time-line" title={t('timeTotalHint')}>
-            ⏱ {t('timeTotal')}: {formatMs(r.attempt.timeMs)}
+            <Timer strokeWidth={1.75} /> {t('timeTotal')}: {formatMs(r.attempt.timeMs)}
           </div>
         )}
       </div>
@@ -647,7 +706,7 @@ function SubmitBanner({ r, params }: { r: SubmitResponse | null; params: Param[]
       </h4>
       {r.attempt.timeMs != null && (
         <div className="time-line" title={t('timeTotalHint')}>
-          ⏱ {t('timeTotal')}: {formatMs(r.attempt.timeMs)}
+          <Timer strokeWidth={1.75} /> {t('timeTotal')}: {formatMs(r.attempt.timeMs)}
         </div>
       )}
       {f && (

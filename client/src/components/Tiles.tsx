@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import type { Attempt, Progress, Verdict } from '../lib/api';
 import { formatMs, LANGUAGE_LABELS } from '../lib/format';
 import { useI18n } from '../lib/i18n';
@@ -31,19 +32,29 @@ const VERDICT_CLASS: Record<Verdict, string> = {
   skipped: 'tone-none',
 };
 
-export function SubmissionGrid({ progress, totalTests }: { progress: Progress; totalTests: number }) {
+export function SubmissionGrid({
+  progress,
+  totalTests,
+  animateLast = false,
+}: {
+  progress: Progress;
+  totalTests: number;
+  animateLast?: boolean;
+}) {
   const { t } = useI18n();
+  const seen = useRef(Math.max(0, progress.attempts.length - (animateLast ? 1 : 0)));
   const rows = [];
   for (let i = 0; i < progress.maxAttempts; i++) {
     const a = progress.attempts[i];
+    const fresh = !!a && i >= seen.current;
     const cells = [];
     for (let j = 0; j < totalTests; j++) {
       const v = a?.verdicts[j];
       cells.push(
         <span
           key={j}
-          className={`cell ${v ? VERDICT_CLASS[v] : 'tone-empty'} ${a ? 'flip' : ''}`}
-          style={a ? { animationDelay: `${j * 45}ms` } : undefined}
+          className={`cell ${v ? VERDICT_CLASS[v] : 'tone-empty'} ${fresh ? 'flip' : ''}`}
+          style={fresh ? { animationDelay: `${j * 45}ms` } : undefined}
           title={v ? t(`verdict_${v}`) : undefined}
         />,
       );

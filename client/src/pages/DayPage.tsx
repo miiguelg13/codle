@@ -5,6 +5,8 @@ import { api, type DaySummary, type Progress } from '../lib/api';
 import { addDays, dayNumber, formatDate } from '../lib/format';
 import { useAuth } from '../lib/auth';
 import { errorMessage, levelKey, useI18n } from '../lib/i18n';
+import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Boxed } from '../components/Boxed';
 import { openHowToPlay } from '../components/HowToPlay';
 
 function useCountdown(ms: number | null) {
@@ -36,31 +38,15 @@ function progressTone(p: Progress): string {
   return 'tone-empty';
 }
 
-function DayProgress({ day }: { day: DaySummary }) {
-  const { t } = useI18n();
-  const solved = day.problems.filter((p) => p.progress.solved).length;
-  const allDone = day.problems.every((p) => p.progress.finished);
+function DayCells({ day }: { day: DaySummary }) {
   return (
-    <div className="day-progress">
-      <div className="day-progress-bar" aria-hidden>
-        {[...day.problems]
-          .sort((a, b) => a.level - b.level)
-          .map((p) => (
-            <span key={p.id} className={progressTone(p.progress)} />
-          ))}
-      </div>
-      <p className={allDone ? 'day-done' : 'muted'}>
-        {allDone ? (day.isToday ? t('dayComplete') : t('dayCompleteRetro')) : t('dayProgress', { s: solved, n: day.problems.length })}
-        {!allDone && solved === 0 && (
-          <>
-            {' · '}
-            <button className="how-link" onClick={openHowToPlay}>
-              {t('howToLink')}
-            </button>
-          </>
-        )}
-      </p>
-    </div>
+    <span className="tiles" aria-hidden>
+      {[...day.problems]
+        .sort((a, b) => a.level - b.level)
+        .map((p) => (
+          <span key={p.id} className={`tile ${progressTone(p.progress)}`} />
+        ))}
+    </span>
   );
 }
 
@@ -99,59 +85,102 @@ export default function DayPage() {
   const next = addDays(day.date, 1);
   const nextLink = next === day.today ? '/' : `/day/${next}`;
 
+  const solved = day.problems.filter((p) => p.progress.solved).length;
+  const allDone = day.problems.length > 0 && day.problems.every((p) => p.progress.finished);
+  const sorted = [...day.problems].sort((a, b) => a.level - b.level);
+
   return (
     <main className="page day-page">
       {merged ? <p className="notice ok small">{t('mergedNote', { n: merged })}</p> : null}
-      <section className="day-head">
-        <div className="day-nav">
-          <Link to={`/day/${prev}`} className="icon-btn" aria-label="←">
-            ←
-          </Link>
-          <div className="day-title">
-            <span className="day-number">#{dayNumber(day.date)}</span>
-            <h1>{formatDate(day.date, lang)}</h1>
-          </div>
-          {day.date < day.today ? (
-            <Link to={nextLink} className="icon-btn" aria-label="→">
-              →
-            </Link>
-          ) : (
-            <span className="icon-btn disabled">→</span>
-          )}
+
+      {/* Cajetín de la hoja */}
+      <header className="sheet-head">
+        <Link to={`/day/${prev}`} className="sheet-nav prev" aria-label={formatDate(prev, lang)}>
+          <ChevronLeft strokeWidth={1.75} />
+        </Link>
+        <div className="sheet-date">
+          <h1>{formatDate(day.date, lang)}</h1>
+          <p>{day.isToday ? t('tagline') : t('retroNote')}</p>
         </div>
-        <p className="tagline">
+        <div className="sheet-fields">
+          <div className="sheet-field">
+            <span className="field">{t('sheet')}</span>
+            <strong>Nº {dayNumber(day.date)}</strong>
+          </div>
           {day.isToday && countdown ? (
-            <>
-              {t('nextIn')} <span className="mono">{countdown}</span>
-            </>
-          ) : !day.isToday ? (
-            t('retroNote')
-          ) : (
-            t('tagline')
-          )}
-        </p>
-        {day.problems.length > 0 && <DayProgress day={day} />}
-      </section>
+            <div className="sheet-field">
+              <span className="field">{t('nextSheet')}</span>
+              <span className="mono">{countdown}</span>
+            </div>
+          ) : null}
+          <div className="sheet-field sheet-progress">
+            <span className="field">{t('solvedField')}</span>
+            <span className="row">
+              <strong>
+                {solved}/{day.problems.length}
+              </strong>
+              {day.problems.length > 0 && <DayCells day={day} />}
+            </span>
+          </div>
+        </div>
+        {day.date < day.today ? (
+          <Link to={nextLink} className="sheet-nav next" aria-label={formatDate(next, lang)}>
+            <ChevronRight strokeWidth={1.75} />
+          </Link>
+        ) : (
+          <span className="sheet-nav next disabled" aria-hidden>
+            <ChevronRight strokeWidth={1.75} />
+          </span>
+        )}
+      </header>
+
+      <p className={`day-note ${allDone ? 'done' : ''}`}>
+        {day.problems.length === 0 ? null : allDone ? (
+          day.isToday ? t('dayComplete') : t('dayCompleteRetro')
+        ) : solved === 0 ? (
+          <button className="how-link" onClick={openHowToPlay}>
+            {t('howToLink')}
+          </button>
+        ) : null}
+      </p>
 
       {day.problems.length === 0 ? (
         <p className="empty">{t('noProblems')}</p>
       ) : (
-        <section className="cards">
-          {day.problems.map((p) => (
-            <Link key={p.id} to={`/problem/${p.id}`} className={`card level-${p.level}`}>
-              <div className="card-top">
-                <span className={`badge level-${p.level}`}>{t(levelKey(p.level))}</span>
-                {p.progress.solved && <span className="check">✓</span>}
-              </div>
-              <h2>{p.title[lang] || p.title.es}</h2>
-              <AttemptTiles progress={p.progress} />
-              <div className="card-foot">
-                <span className="muted">{statusText(t, p.progress)}</span>
-                <span className="card-cta">{p.progress.finished ? t('review') : t('play')} →</span>
-              </div>
-            </Link>
-          ))}
-        </section>
+        <ol className="exercises">
+          {sorted.map((p) => {
+            const title = p.title[lang] || p.title.es;
+            const state = p.progress.solved ? 'solved' : p.progress.finished ? 'failed' : '';
+            return (
+              <li key={p.id}>
+                <Link
+                  to={`/problem/${p.id}`}
+                  className={`exercise level-${p.level} ${state} ${p.progress.finished ? 'finished' : ''}`}
+                >
+                  <span className="ex-num">
+                    {p.level}
+                    <span className={`badge level-${p.level}`}>{t(levelKey(p.level))}</span>
+                  </span>
+                  <span className="ex-main">
+                    <h2>{p.progress.solved ? <Boxed>{title}</Boxed> : title}</h2>
+                    <span className="ex-status">
+                      <span className={`badge ex-level level-${p.level}`}>{t(levelKey(p.level))}</span>
+                      <span className="ex-level"> · </span>
+                      {statusText(t, p.progress)}
+                    </span>
+                  </span>
+                  <span className="ex-tiles">
+                    <AttemptTiles progress={p.progress} />
+                  </span>
+                  <span className="ex-go">
+                    <span className="lbl">{p.progress.finished ? t('review') : t('play')}</span>
+                    <ArrowRight strokeWidth={1.75} />
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ol>
       )}
     </main>
   );

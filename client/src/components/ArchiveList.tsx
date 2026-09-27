@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
+import { Check, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { ArchiveItem, ArchiveStatus } from '../lib/api';
 import { levelKey, useI18n } from '../lib/i18n';
 
-const STATUS_ICON: Record<ArchiveStatus, string> = { new: '○', attempted: '◐', solved: '✓', failed: '✗' };
 const STATUSES: ArchiveStatus[] = ['new', 'attempted', 'solved', 'failed'];
 
 function shortDate(date: string, lang: 'es' | 'en', today: string): string {
@@ -120,11 +120,12 @@ export function ArchiveList({ items, today }: { items: ArchiveItem[]; today: str
             <li key={it.id}>
               <Link to={`/problem/${it.id}`} className={`archive-row status-${it.status}`}>
                 <span className={`archive-status status-${it.status}`} title={t(`status_${it.status}`)} aria-label={t(`status_${it.status}`)}>
-                  {STATUS_ICON[it.status]}
+                  {it.status === 'solved' && <Check strokeWidth={3} />}
+                  {it.status === 'failed' && <X strokeWidth={3} />}
                 </span>
                 <span className="archive-date muted">
-                  {it.date === today ? '★ ' : ''}
                   {shortDate(it.date, lang, today)}
+                  {it.date === today && <span className="today-mark"> · {t('todayMark')}</span>}
                 </span>
                 <span className={`badge level-${it.level}`}>{t(levelKey(it.level))}</span>
                 <span className="archive-title">{it.title[lang] || it.title.es}</span>
