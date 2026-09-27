@@ -255,7 +255,7 @@ def build_problem(p, idx):
 
     distinct = {json.dumps(sort_deep(c["output"]) if compare != "exact" else c["output"]) for _, _, c in cases}
     warnings = []
-    if len(distinct) < max(3, len(cases) // 3):
+    if ret != "bool" and len(distinct) < max(3, len(cases) // 3):
         warnings.append(f"solo {len(distinct)} salidas distintas en {len(cases)} casos: ¿tests poco variados?")
     if ref_time > 3:
         warnings.append(f"la referencia en Python tarda {ref_time:.1f}s en total: quizá los tests grandes son demasiado grandes")
