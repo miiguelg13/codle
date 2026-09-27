@@ -167,7 +167,7 @@ function AccountMenu() {
             <span className="field">{lang === 'es' ? 'Idioma' : 'Language'}</span>
             <LangToggle />
           </div>
-          <div className="menu-lang">
+          <div className="menu-lang skin-menu">
             <span className="field">{lang === 'es' ? 'Estilo' : 'Style'}</span>
             <SkinToggle />
           </div>
@@ -224,6 +224,9 @@ export function Layout() {
           <button className="icon-btn help-btn" onClick={() => setHelp(true)} title={helpLabel} aria-label={helpLabel}>
             <CircleHelp strokeWidth={1.75} />
           </button>
+          <div className="skin-top">
+            <SkinToggle />
+          </div>
           <ThemeToggle />
           <div className="hide-sm">
             <LangToggle />

@@ -894,6 +894,20 @@ select {
 .streak-chip .flame {
   display: none;
 }
+.skin-top .seg button {
+  height: 34px;
+}
+.menu-lang.skin-menu {
+  display: none;
+}
+@media (max-width: 900px) {
+  .skin-top {
+    display: none;
+  }
+  .menu-lang.skin-menu {
+    display: flex;
+  }
+}
 
 .page {
   width: 100%;
