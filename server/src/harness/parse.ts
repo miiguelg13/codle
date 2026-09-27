@@ -12,6 +12,7 @@ export interface TestOutcome {
   rawActual?: string;
   error?: string;
   logs: string;
+  timeMs?: number;
 }
 
 export interface ParsedRun {
@@ -46,9 +47,10 @@ export function parseRun(
     };
   }
 
-  const marker = new RegExp(`^${nonce}:(\\d+):(BEGIN|OK|ERR|TLE)(?::(.*))?$`);
+  const marker = new RegExp(`^${nonce}:(\\d+):(BEGIN|OK|ERR|TLE|T)(?::(.*))?$`);
   const outcomes: (TestOutcome | undefined)[] = new Array(tests.length).fill(undefined);
   const logs: string[][] = tests.map(() => []);
+  const times: (number | undefined)[] = new Array(tests.length).fill(undefined);
   const global: string[] = [];
   let current = -1;
   let started = false;
@@ -70,6 +72,11 @@ export function parseRun(
       started = true;
       current = idx;
       lastBegun = idx;
+      continue;
+    }
+    if (kind === 'T') {
+      const ms = Number(payload);
+      if (Number.isFinite(ms) && ms >= 0) times[idx] = ms;
       continue;
     }
     current = -1;
@@ -108,7 +115,7 @@ export function parseRun(
 
   const final: TestOutcome[] = tests.map((_, i) => {
     const o = outcomes[i];
-    if (o) return { ...o, logs: clip(logs[i].join('\n')) };
+    if (o) return { ...o, logs: clip(logs[i].join('\n')), ...(times[i] != null ? { timeMs: times[i] } : {}) };
     if (i === lastBegun) {
       // Empezó pero no terminó: el proceso murió aquí.
       const verdict: Verdict = exec.status === 'timeout' ? 'timeout' : 'error';

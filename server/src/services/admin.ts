@@ -48,6 +48,7 @@ export const problemBody = z.object({
     .object({ language: z.enum(LANGUAGES), code: z.string().max(64 * 1024) })
     .nullable()
     .optional(),
+  editorial: i18n.nullable().optional(),
 });
 export type ProblemBody = z.infer<typeof problemBody>;
 
@@ -163,6 +164,7 @@ export async function getProblemFull(id: string) {
     examples: p.examples.map(decodeCase),
     tests: p.tests.map(decodeCase),
     referenceSolution: p.referenceSolution?.code ? p.referenceSolution : null,
+    editorial: p.editorial?.es || p.editorial?.en ? p.editorial : null,
     players: progress,
   };
 }
@@ -185,6 +187,7 @@ function toDoc(p: ProblemBody) {
     examples: p.examples.map((c) => encodeCase(c as Parameters<typeof encodeCase>[0])),
     tests: p.tests.map((c) => encodeCase(c as Parameters<typeof encodeCase>[0])),
     referenceSolution: p.referenceSolution ?? undefined,
+    editorial: p.editorial && (p.editorial.es || p.editorial.en) ? p.editorial : undefined,
   };
 }
 

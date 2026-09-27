@@ -5,6 +5,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AttemptTiles, SubmissionGrid } from '../components/Tiles';
 import {
   api,
+  LANGUAGES,
   type DaySummary,
   type Language,
   type Param,
@@ -12,13 +13,14 @@ import {
   type RunResponse,
   type SubmitResponse,
 } from '../lib/api';
-import { formatValue, LANGUAGE_LABELS } from '../lib/format';
+import { formatMs, formatValue, LANGUAGE_LABELS } from '../lib/format';
 import { useAuth } from '../lib/auth';
 import { errorMessage, levelKey, useI18n } from '../lib/i18n';
 import { defineCodleTheme, MONACO_LANG } from '../lib/monaco';
 import { storage } from '../lib/storage';
+import { useTheme } from '../lib/theme';
 
-const LANGS: Language[] = ['python', 'javascript', 'java', 'cpp'];
+const LANGS: readonly Language[] = LANGUAGES;
 
 function preferredLanguage(): Language {
   const l = storage.get('prefLang');
@@ -44,6 +46,7 @@ export default function ProblemPage() {
   const navigate = useNavigate();
   const { t, lang } = useI18n();
   const { refresh: refreshAuth } = useAuth();
+  const { monacoTheme } = useTheme();
 
   const [problem, setProblem] = useState<ProblemDetail | null>(null);
   const [day, setDay] = useState<DaySummary | null>(null);
@@ -136,6 +139,7 @@ export default function ProblemPage() {
               ...p,
               progress: r.progress,
               referenceSolution: r.status === 'ok' ? (r.referenceSolution ?? p.referenceSolution) : p.referenceSolution,
+              editorial: r.status === 'ok' ? (r.editorial ?? p.editorial) : p.editorial,
             }
           : p,
       );
@@ -281,12 +285,29 @@ export default function ProblemPage() {
                   </>
                 )}
               </>
-            ) : problem.referenceSolution ? (
+            ) : problem.progress.finished && (problem.referenceSolution || problem.editorial) ? (
               <>
-                <p className="muted small">{LANGUAGE_LABELS[problem.referenceSolution.language as Language] ?? problem.referenceSolution.language}</p>
-                <pre className="solution-code">
-                  <code>{problem.referenceSolution.code}</code>
-                </pre>
+                <div className="editorial">
+                  <h3>{t('editorialTitle')}</h3>
+                  {problem.editorial ? (
+                    <Markdown>{problem.editorial[lang] || problem.editorial.es}</Markdown>
+                  ) : (
+                    <p className="muted">{t('noEditorial')}</p>
+                  )}
+                </div>
+                {problem.referenceSolution && (
+                  <>
+                    <div className="solution-lang">
+                      <h3>{t('officialCode')}</h3>
+                      <span className="badge">
+                        {LANGUAGE_LABELS[problem.referenceSolution.language as Language] ?? problem.referenceSolution.language}
+                      </span>
+                    </div>
+                    <pre className="solution-code">
+                      <code>{problem.referenceSolution.code}</code>
+                    </pre>
+                  </>
+                )}
               </>
             ) : (
               <p className="locked">🔒 {t('solutionLocked')}</p>
@@ -336,8 +357,8 @@ export default function ProblemPage() {
               value={code}
               onChange={onCodeChange}
               onMount={onMount}
-              theme="codle-dark"
-                  beforeMount={defineCodleTheme}
+              theme={monacoTheme}
+              beforeMount={defineCodleTheme}
               options={{
                 fontFamily: "'JetBrains Mono', monospace",
                 fontSize: 14,
@@ -384,7 +405,11 @@ export default function ProblemPage() {
                           {c.verdict === 'pass' ? '✓' : '✗'} {t('case')} {i + 1}
                         </button>
                       ))}
-                      {runResult.timeMs != null && <span className="muted small">{runResult.timeMs} ms</span>}
+                      {runResult.timeMs != null && (
+                        <span className="muted case-time" title={t('timeTotalHint')}>
+                          ⏱ {formatMs(runResult.timeMs)}
+                        </span>
+                      )}
                     </div>
                     {runResult.cases[activeCase] && (
                       <CaseDetail c={runResult.cases[activeCase]} params={problem.signature.params} />
@@ -430,7 +455,7 @@ export default function ProblemPage() {
               <button className="btn secondary" onClick={() => setModal(null)}>
                 {t('close')}
               </button>
-              {modal === 'failed' && (
+              {(modal === 'failed' || modal === 'solved') && (
                 <button
                   className="btn secondary"
                   onClick={() => {
@@ -438,7 +463,7 @@ export default function ProblemPage() {
                     setLeftTab('solution');
                   }}
                 >
-                  {t('solution')}
+                  {t('seeSolution')}
                 </button>
               )}
               {nextProblem && (
@@ -458,7 +483,15 @@ function CaseDetail({ c, params }: { c: RunResponse['cases'][number]; params: Pa
   const { t } = useI18n();
   return (
     <div className="case-detail">
-      <div className={`verdict ${c.verdict === 'pass' ? 'ok' : 'bad'}`}>{t(`verdict_${c.verdict}`)}</div>
+      <div className={`verdict ${c.verdict === 'pass' ? 'ok' : 'bad'}`}>
+        {t(`verdict_${c.verdict}`)}
+        {c.timeMs != null && (
+          <span className="muted small">
+            {' '}
+            · {t('timeCase')}: {formatMs(c.timeMs)}
+          </span>
+        )}
+      </div>
       <h5>{t('input')}</h5>
       <div className="code-box">
         <InputView params={params} values={c.input} />
@@ -501,6 +534,11 @@ function SubmitBanner({ r, params }: { r: SubmitResponse | null; params: Param[]
       <div className="banner ok">
         <h4>{t('accepted')}</h4>
         <span className="muted">{t('passedTests', { p: r.attempt.passed, t: r.attempt.total })}</span>
+        {r.attempt.timeMs != null && (
+          <div className="time-line" title={t('timeTotalHint')}>
+            ⏱ {t('timeTotal')}: {formatMs(r.attempt.timeMs)}
+          </div>
+        )}
       </div>
     );
   }
@@ -510,6 +548,11 @@ function SubmitBanner({ r, params }: { r: SubmitResponse | null; params: Param[]
       <h4>
         {t('wrongAnswer')} · {t('passedTests', { p: r.attempt.passed, t: r.attempt.total })}
       </h4>
+      {r.attempt.timeMs != null && (
+        <div className="time-line" title={t('timeTotalHint')}>
+          ⏱ {t('timeTotal')}: {formatMs(r.attempt.timeMs)}
+        </div>
+      )}
       {f && (
         <div className="small">
           <p>

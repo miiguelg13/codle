@@ -39,12 +39,16 @@ export const config = {
   wandbox: {
     url: (process.env.WANDBOX_URL ?? 'https://wandbox.org').replace(/\/$/, ''),
     timeFactor: num('WANDBOX_TIME_FACTOR', 1),
-    extraSeconds: num('WANDBOX_EXTRA_SECONDS', 20),
+    extraSeconds: num('WANDBOX_EXTRA_SECONDS', 45),
     compilers: {
       python: process.env.WANDBOX_COMPILER_PYTHON,
       javascript: process.env.WANDBOX_COMPILER_JAVASCRIPT,
       java: process.env.WANDBOX_COMPILER_JAVA,
       cpp: process.env.WANDBOX_COMPILER_CPP,
+      go: process.env.WANDBOX_COMPILER_GO,
+      rust: process.env.WANDBOX_COMPILER_RUST,
+      csharp: process.env.WANDBOX_COMPILER_CSHARP,
+      typescript: process.env.WANDBOX_COMPILER_TYPESCRIPT,
     },
   },
 
@@ -57,6 +61,10 @@ export const config = {
       javascript: optionalNum('JUDGE0_LANG_JAVASCRIPT'),
       java: optionalNum('JUDGE0_LANG_JAVA'),
       cpp: optionalNum('JUDGE0_LANG_CPP'),
+      go: optionalNum('JUDGE0_LANG_GO'),
+      rust: optionalNum('JUDGE0_LANG_RUST'),
+      csharp: optionalNum('JUDGE0_LANG_CSHARP'),
+      typescript: optionalNum('JUDGE0_LANG_TYPESCRIPT'),
     },
   },
 
@@ -66,6 +74,11 @@ export const config = {
     javac: process.env.LOCAL_JAVAC ?? 'javac',
     java: process.env.LOCAL_JAVA ?? 'java',
     gpp: process.env.LOCAL_GPP ?? 'g++',
+    go: process.env.LOCAL_GO ?? 'go',
+    rustc: process.env.LOCAL_RUSTC ?? 'rustc',
+    mcs: process.env.LOCAL_MCS ?? (process.platform === 'win32' ? 'csc' : 'mcs'),
+    mono: process.env.LOCAL_MONO ?? 'mono',
+    tsc: process.env.LOCAL_TSC ?? (process.platform === 'win32' ? 'tsc.cmd' : 'tsc'),
   },
 };
 

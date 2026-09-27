@@ -364,6 +364,10 @@ test('strings unicode y caracteres especiales viajan intactos', async () => {
     javascript: 'function echo(s) { return s; }',
     java: 'class Solution { public String echo(String s) { return s; } }',
     cpp: 'class Solution { public: string echo(string s) { return s; } };',
+    go: 'func echo(s string) string { return s }',
+    rust: 'impl Solution { pub fn echo(s: String) -> String { s } }',
+    csharp: 'public class Solution { public string Echo(string s) { return s; } }',
+    typescript: 'function echo(s: string): string { return s; }',
   };
   for (const [lang, code] of Object.entries(codes) as [Language, string][]) {
     const r = await runTests(p, lang, code, tests);

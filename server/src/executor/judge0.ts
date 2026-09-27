@@ -18,13 +18,26 @@ interface Judge0Submission {
   memory?: number | null;
 }
 
-const FALLBACK_IDS: Record<Language, number> = { python: 71, javascript: 63, java: 62, cpp: 54 };
+const FALLBACK_IDS: Record<Language, number> = {
+  python: 71,
+  javascript: 63,
+  java: 62,
+  cpp: 54,
+  go: 60,
+  rust: 73,
+  csharp: 51,
+  typescript: 74,
+};
 
 const LANGUAGE_PATTERNS: Record<Language, RegExp> = {
   python: /^Python \(3\.[\d.]+\)$/,
   javascript: /^JavaScript \(Node\.js [\d.]+\)$/,
   java: /^Java \((OpenJDK|JDK) [\d.]+\)$/,
   cpp: /^C\+\+ \(GCC [\d.]+\)$/,
+  go: /^Go \([\d.]+\)$/,
+  rust: /^Rust \([\d.]+\)$/,
+  csharp: /^C# \(Mono [\d.]+\)$/,
+  typescript: /^TypeScript \([\d.]+\)$/,
 };
 
 function versionOf(name: string): number[] {

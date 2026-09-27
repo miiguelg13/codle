@@ -27,6 +27,20 @@ const SOL: Record<Language, string> = {
   javascript: `function twice(nums) { if (nums[0] === -1) { try { for (;;) {} } catch (e) { return 0; } } let s = 0; for (const x of nums) s += x; return 2 * s; }`,
   java: `class Solution { public long twice(int[] nums) { if (nums.length > 0 && nums[0] == -1) { while (true) {} } long s = 0; for (int x : nums) s += x; return 2 * s; } }`,
   cpp: `class Solution { public: long long twice(vector<int> nums) { if (!nums.empty() && nums[0] == -1) { volatile int k = 0; while (true) { k++; } } long long s = 0; for (int x : nums) s += x; return 2 * s; } };`,
+  go: `func twice(nums []int) int {
+    if len(nums) > 0 && nums[0] == -1 {
+        for {
+        }
+    }
+    s := 0
+    for _, x := range nums {
+        s += x
+    }
+    return 2 * s
+}`,
+  rust: `impl Solution { pub fn twice(nums: Vec<i32>) -> i64 { if !nums.is_empty() && nums[0] == -1 { loop {} } nums.iter().map(|&x| x as i64).sum::<i64>() * 2 } }`,
+  csharp: `public class Solution { public long Twice(int[] nums) { if (nums.Length > 0 && nums[0] == -1) { while (true) {} } long s = 0; foreach (var x in nums) s += x; return 2 * s; } }`,
+  typescript: `function twice(nums: number[]): number { if (nums[0] === -1) { for (;;) {} } let s = 0; for (const x of nums) s += x; return 2 * s; }`,
 };
 
 function makeTests(n: number, len: number): TestCase[] {
@@ -63,7 +77,7 @@ test('splitTests: agrupa sin pasar del límite y conserva el orden', () => {
   assert.deepEqual(byOut.flat(), big);
 });
 
-for (const lang of ['python', 'javascript', 'java', 'cpp'] as Language[]) {
+for (const lang of Object.keys(SOL) as Language[]) {
   test(`${lang}: los tests repartidos en varias ejecuciones pasan y el vigilante corta un bucle infinito`, async () => {
     const ex = new ChunkedLocal();
     const tests = makeTests(24, 800);
@@ -108,12 +122,24 @@ test('pickCompilers: la versión estable más nueva de cada lenguaje', () => {
     { name: 'openjdk-jdk-22+36', language: 'Java' },
     { name: 'nodejs-18.20.4', language: 'JavaScript' },
     { name: 'nodejs-20.17.0', language: 'JavaScript' },
+    { name: 'go-1.23.2', language: 'Go' },
+    { name: 'go-1.16.3', language: 'Go' },
+    { name: 'rust-1.82.0', language: 'Rust' },
+    { name: 'rust-1.9.0', language: 'Rust' },
+    { name: 'mono-6.12.0.199', language: 'C#' },
+    { name: 'mono-5.20.1.34', language: 'C#' },
+    { name: 'dotnetcore-8.0.402', language: 'C#' },
+    { name: 'typescript-5.6.2', language: 'TypeScript' },
   ];
   assert.deepEqual(pickCompilers(list), {
     cpp: 'gcc-13.2.0',
     python: 'cpython-3.14.0',
     java: 'openjdk-jdk-22+36',
     javascript: 'nodejs-20.17.0',
+    go: 'go-1.23.2',
+    rust: 'rust-1.82.0',
+    csharp: 'mono-6.12.0.199',
+    typescript: 'typescript-5.6.2',
   });
 });
 

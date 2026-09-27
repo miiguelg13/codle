@@ -1,4 +1,5 @@
-export type Language = 'python' | 'javascript' | 'java' | 'cpp';
+export const LANGUAGES = ['python', 'javascript', 'typescript', 'java', 'cpp', 'csharp', 'go', 'rust'] as const;
+export type Language = (typeof LANGUAGES)[number];
 export type Verdict = 'pass' | 'fail' | 'error' | 'timeout' | 'skipped';
 export type I18nText = { es: string; en: string };
 
@@ -62,6 +63,7 @@ export interface ProblemDetail {
   lastCode: Partial<Record<Language, string>>;
   progress: Progress;
   referenceSolution: { language: string; code: string } | null;
+  editorial?: I18nText | null;
 }
 
 export interface RunCase {
@@ -72,6 +74,7 @@ export interface RunCase {
   verdict: Verdict;
   error?: string;
   logs: string;
+  timeMs?: number;
 }
 
 export interface RunResponse {
@@ -96,6 +99,7 @@ export type SubmitResponse =
         example?: { input: unknown[]; expected: unknown; actual?: unknown };
       } | null;
       referenceSolution: { language: string; code: string } | null;
+      editorial?: I18nText | null;
     };
 
 export class ApiError extends Error {

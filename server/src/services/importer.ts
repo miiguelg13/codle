@@ -17,6 +17,7 @@ interface DayFile {
     signature: Signature;
     examples: TestCase[];
     tests: TestCase[];
+    editorial?: { es: string; en: string };
   })[];
 }
 
@@ -69,6 +70,7 @@ async function importDay(day: DayFile, file: string, report: ImportReport): Prom
       tests: p.tests.map((e) => encodeCase(e as Parameters<typeof encodeCase>[0])),
       timeLimit: p.timeLimit ?? 5,
       referenceSolution: p.referenceSolution,
+      ...(p.editorial ? { editorial: p.editorial } : {}),
       importHash: hash,
       tags: p.tags ?? [],
     };
@@ -85,7 +87,12 @@ async function importDay(day: DayFile, file: string, report: ImportReport): Prom
         continue;
       }
       if (day.date <= t) {
-        report.skipped.push(`${key}: el día ya ha empezado, no se modifica`);
+        if (p.editorial) {
+          await Problem.updateOne({ _id: existing._id }, { $set: { editorial: p.editorial, importHash: hash } });
+          report.updated.push(`${key} (solo la explicación: el día ya ha empezado)`);
+        } else {
+          report.skipped.push(`${key}: el día ya ha empezado, no se modifica`);
+        }
         continue;
       }
       await Problem.replaceOne({ _id: existing._id }, doc);

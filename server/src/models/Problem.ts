@@ -39,6 +39,7 @@ const problemSchema = new Schema(
       language: { type: String },
       code: { type: String },
     },
+    editorial: { type: new Schema(i18n, { _id: false }), required: false },
     tags: { type: [String], default: [] },
     importHash: { type: String },
   },

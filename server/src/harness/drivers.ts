@@ -1,5 +1,6 @@
 import { elementType, type Language, type Signature, type ValueType } from './types.js';
 import { cppType, javaType } from './templates.js';
+import { csharpProgram, goProgram, rustProgram, tsProgram } from './drivers-extra.js';
 
 export interface BuiltProgram {
   source: string;
@@ -27,6 +28,14 @@ export function buildProgram(
       return { source: javaProgram(userCode, sig, nonce, wd), lineOffset: 0 };
     case 'cpp':
       return { source: cppProgram(userCode, sig, nonce, wd), lineOffset: 0 };
+    case 'go':
+      return { source: goProgram(userCode, sig, nonce, wd), lineOffset: 0 };
+    case 'rust':
+      return { source: rustProgram(userCode, sig, nonce, wd), lineOffset: 0 };
+    case 'csharp':
+      return { source: csharpProgram(userCode, sig, nonce, wd), lineOffset: 0 };
+    case 'typescript':
+      return { source: tsProgram(userCode, sig, nonce, wd), lineOffset: 0 };
   }
 }
 
@@ -42,6 +51,7 @@ function pythonDriver(sig: Signature, nonce: string, wd: number): string {
   return `# ---- driver (no modificar) ----
 def __cdl_main():
     import sys, json
+    import time as __cdl_time
     sys.setrecursionlimit(20000)
     toks = sys.stdin.buffer.read().split()
     pos = [0]
@@ -82,8 +92,11 @@ def __cdl_main():
                 f = getattr(g['Solution'](), '${fn}')
             else:
                 f = g['${fn}']
+            t0 = __cdl_time.perf_counter()
             r = f(*args)
+            el = (__cdl_time.perf_counter() - t0) * 1000
             s = json.dumps(r, separators=(',', ':'), ensure_ascii=False)
+            print("\\n${nonce}:%d:T:%.3f" % (i, el), flush=True)
             print("\\n${nonce}:%d:OK:%s" % (i, s), flush=True)
         except BaseException as e:
             m = (type(e).__name__ + ': ' + str(e)).replace('\\n', ' ')[:300]
@@ -145,8 +158,11 @@ function jsDriver(sig: Signature, nonce: string, wd: number): string {
       if (typeof ${fn} === 'function') f = ${fn};
       else if (typeof Solution === 'function') { var inst = new Solution(); f = inst.${fn}.bind(inst); }
       else throw new ReferenceError('${fn} is not defined');
+      var t0 = process.hrtime();
       var r = call(f, args, i);
+      var dt = process.hrtime(t0);
       var s = JSON.stringify(r === undefined ? null : r);
+      w('\\n${nonce}:' + i + ':T:' + (dt[0] * 1e3 + dt[1] / 1e6).toFixed(3) + '\\n');
       w('\\n${nonce}:' + i + ':OK:' + s + '\\n');
     } catch (e) {
       var m = (e && e.name ? e.name + ': ' + e.message : String(e)).replace(/\\n/g, ' ').slice(0, 300);
@@ -253,8 +269,13 @@ public class Main {
             CUR = i;
             out.print("\\n${nonce}:" + i + ":BEGIN\\n"); out.flush();
             try {
-                ${javaType(sig.returnType)} r = new Solution().${fn}(${args});
-                out.print("\\n${nonce}:" + i + ":OK:" + j(r) + "\\n"); out.flush();
+                Solution sol = new Solution();
+                long t0 = System.nanoTime();
+                ${javaType(sig.returnType)} r = sol.${fn}(${args});
+                long dt = System.nanoTime() - t0;
+                String js = j(r);
+                out.print("\\n${nonce}:" + i + ":T:" + String.format(java.util.Locale.ROOT, "%.3f", dt / 1e6) + "\\n");
+                out.print("\\n${nonce}:" + i + ":OK:" + js + "\\n"); out.flush();
             } catch (Throwable e) {
                 String m = (e.getClass().getSimpleName() + ": " + e.getMessage()).replace('\\n', ' ');
                 if (m.length() > 300) m = m.substring(0, 300);
@@ -373,8 +394,12 @@ namespace __cdl {
         cout << "\\n${nonce}:" << i << ":BEGIN" << endl;
         try {
             Solution sol;
+            auto t0 = chrono::steady_clock::now();
             ${cppType(sig.returnType)} r = sol.${fn}(${args});
-            cout << "\\n${nonce}:" << i << ":OK:" << __cdl::j(r) << endl;
+            double dt = chrono::duration<double, milli>(chrono::steady_clock::now() - t0).count();
+            string js = __cdl::j(r);
+            { char tb[64]; snprintf(tb, sizeof tb, "%.3f", dt); cout << "\\n${nonce}:" << i << ":T:" << tb << endl; }
+            cout << "\\n${nonce}:" << i << ":OK:" << js << endl;
         } catch (const std::exception& e) {
             string m = string("exception: ") + e.what();
             for (char& c : m) if (c == '\\n') c = ' ';

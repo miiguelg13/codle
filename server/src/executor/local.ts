@@ -40,7 +40,7 @@ function run(cmd: string, args: string[], opts: { cwd: string; stdin?: string; t
       clearTimeout(timer);
       const msg =
         err.code === 'ENOENT'
-          ? `No se encuentra el comando "${cmd}" en este equipo. Instálalo o indica su ruta en server/.env (LOCAL_PYTHON, LOCAL_NODE, LOCAL_JAVAC, LOCAL_JAVA, LOCAL_GPP).`
+          ? `No se encuentra el comando "${cmd}" en este equipo. Instálalo, indica su ruta en server/.env (LOCAL_PYTHON, LOCAL_NODE, LOCAL_JAVAC, LOCAL_JAVA, LOCAL_GPP, LOCAL_GO, LOCAL_RUSTC, LOCAL_MCS, LOCAL_MONO, LOCAL_TSC) o usa EXECUTOR=wandbox.`
           : String(err);
       resolve({ code: -1, stdout, stderr: stderr + msg, timedOut, ms: Date.now() - started });
     });
@@ -52,6 +52,9 @@ function run(cmd: string, args: string[], opts: { cwd: string; stdin?: string; t
     child.stdin.end(opts.stdin ?? '');
   });
 }
+
+export const RUST_FLAGS = ['-O', '--edition=2021'];
+export const TS_FLAGS = ['--target', 'ES2022', '--module', 'commonjs', '--noEmitOnError', '--skipLibCheck'];
 
 export class LocalExecutor implements Executor {
   name = 'local';
@@ -89,6 +92,40 @@ export class LocalExecutor implements Executor {
           if (c.code !== 0) return compileError(c, dir);
           runCmd = path.join(dir, exe);
           runArgs = [];
+          break;
+        }
+        case 'go': {
+          await writeFile(path.join(dir, 'main.go'), req.source);
+          const exe = process.platform === 'win32' ? 'main.exe' : 'main';
+          const c = await run(config.local.go, ['build', '-o', exe, 'main.go'], { cwd: dir, timeoutMs: 90_000 });
+          if (c.code !== 0) return compileError(c, dir);
+          runCmd = path.join(dir, exe);
+          runArgs = [];
+          break;
+        }
+        case 'rust': {
+          await writeFile(path.join(dir, 'main.rs'), req.source);
+          const exe = process.platform === 'win32' ? 'main.exe' : 'main';
+          const c = await run(config.local.rustc, [...RUST_FLAGS, '-o', exe, 'main.rs'], { cwd: dir, timeoutMs: 90_000 });
+          if (c.code !== 0) return compileError(c, dir);
+          runCmd = path.join(dir, exe);
+          runArgs = [];
+          break;
+        }
+        case 'csharp': {
+          await writeFile(path.join(dir, 'main.cs'), req.source);
+          const c = await run(config.local.mcs, ['-optimize+', '-out:main.exe', 'main.cs'], { cwd: dir, timeoutMs: 60_000 });
+          if (c.code !== 0) return compileError(c, dir);
+          runCmd = process.platform === 'win32' ? path.join(dir, 'main.exe') : config.local.mono;
+          runArgs = process.platform === 'win32' ? [] : ['main.exe'];
+          break;
+        }
+        case 'typescript': {
+          await writeFile(path.join(dir, 'main.ts'), req.source);
+          const c = await run(config.local.tsc, [...TS_FLAGS, 'main.ts'], { cwd: dir, timeoutMs: 60_000 });
+          if (c.code !== 0) return compileError(c, dir);
+          runCmd = config.local.node;
+          runArgs = ['main.js'];
           break;
         }
       }

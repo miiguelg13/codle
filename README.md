@@ -1,6 +1,6 @@
 # Codle · retos diarios de programación estilo Wordle
 
-Cada día hay **4 retos** (Fácil, Medio, Difícil y Experto). Se resuelven en un editor tipo LeetCode en **Python, JavaScript, Java o C++**. Tienes **5 envíos** por reto, y cada envío pinta una fila de casillas (una por test), como en Wordle.
+Cada día hay **4 retos** (Fácil, Medio, Difícil y Experto). Se resuelven en un editor tipo LeetCode en **Python, JavaScript, TypeScript, Java, C++, C#, Go o Rust**. Al terminar cada reto se desbloquean la solución oficial y su explicación. Tienes **5 envíos** por reto, y cada envío pinta una fila de casillas (una por test), como en Wordle.
 
 > "Codle" es un nombre provisional. Para cambiarlo, edita `Logo` en `client/src/components/Layout.tsx` y el `<title>` de `client/index.html`.
 
@@ -64,7 +64,7 @@ Requisitos: **Node 20+** y una base de datos MongoDB.
 ### Otros comandos
 
 ```bash
-npm test                               # tests del motor en los 4 lenguajes (necesita python3, node, java y g++)
+npm test                               # tests del motor en los 8 lenguajes (necesita python3, node, java, g++, go, rustc, mcs/mono y tsc)
 TEST_MONGODB_URI=mongodb://127.0.0.1:27017 npm test   # además, tests de integración de la API
 npm run build && npm start -w server   # producción: Express sirve también el frontend
 python server/src/seed/generate_seed.py   # regenera problems.json desde las soluciones de referencia
@@ -166,6 +166,7 @@ server/                Express + Mongo
 ## Hoja de ruta
 
 - [x] **Fase 1**: base, editor, ejecución en 4 lenguajes, retos diarios, días anteriores, i18n y tema oscuro
+- [x] **Mejoras (27-sep)**: Go, Rust, C# y TypeScript; tiempo de ejecución por test; solución oficial con explicación; modo claro
 - [x] **Fase 2**: cuentas (registro/login, y pasar el progreso de invitado a la cuenta), rachas y estadísticas
 - [x] **Fase 3**: generación diaria de retos con un agente programado (sin clave de API), validada con la referencia y una fuerza bruta
 - [x] **Fase 4**: panel de administración para revisar, editar y publicar retos

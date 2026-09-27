@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import { useI18n } from '../lib/i18n';
+import { useTheme } from '../lib/theme';
 
 function Logo() {
   const letters = ['C', 'O', 'D', 'L', 'E'];
@@ -28,6 +29,20 @@ function LangToggle() {
         EN
       </button>
     </div>
+  );
+}
+
+function ThemeToggle() {
+  const { theme, toggle } = useTheme();
+  const { lang } = useI18n();
+  const label =
+    theme === 'dark'
+      ? lang === 'es' ? 'Cambiar a modo claro' : 'Switch to light mode'
+      : lang === 'es' ? 'Cambiar a modo oscuro' : 'Switch to dark mode';
+  return (
+    <button className="theme-toggle" onClick={toggle} title={label} aria-label={label}>
+      {theme === 'dark' ? '☀️' : '🌙'}
+    </button>
   );
 }
 
@@ -158,6 +173,7 @@ export function Layout() {
         </nav>
         <div className="topbar-right">
           <StreakChip />
+          <ThemeToggle />
           <div className="hide-sm">
             <LangToggle />
           </div>

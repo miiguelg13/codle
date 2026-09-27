@@ -32,6 +32,7 @@ type LeanProblem = {
   timeLimit: number;
   memoryLimit: number;
   referenceSolution?: { language?: string; code?: string };
+  editorial?: { es?: string; en?: string } | null;
 };
 
 type LeanProgress = {
@@ -141,6 +142,7 @@ export async function getProblem(id: string, playerId: string) {
     lastCode,
     progress: pub,
     referenceSolution: pub.finished ? (p.referenceSolution ?? null) : null,
+    editorial: pub.finished ? editorialOf(p) : null,
   };
 }
 
@@ -163,6 +165,7 @@ export async function runExamples(id: string, language: Language, code: string) 
         verdict: o.verdict,
         error: o.error,
         logs: o.logs,
+        timeMs: o.timeMs != null ? Math.round(o.timeMs * 100) / 100 : undefined,
       };
     }),
   };
@@ -268,5 +271,11 @@ export async function submit(id: string, playerId: string, language: Language, c
     firstFailure,
     progress: publicProgress(updated),
     referenceSolution: publicProgress(updated).finished ? (p.referenceSolution ?? null) : null,
+    editorial: publicProgress(updated).finished ? editorialOf(p) : null,
   };
+}
+
+function editorialOf(p: { editorial?: { es?: string | null; en?: string | null } | null }) {
+  const e = p.editorial;
+  return e && (e.es || e.en) ? { es: e.es ?? '', en: e.en ?? '' } : null;
 }

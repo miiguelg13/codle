@@ -2,7 +2,7 @@ import Editor from '@monaco-editor/react';
 import { useEffect, useMemo, useState } from 'react';
 import Markdown from 'react-markdown';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import type { Language } from '../../lib/api';
+import { LANGUAGES, type Language } from '../../lib/api';
 import {
   adminApi,
   SOURCE_LABEL,
@@ -15,9 +15,10 @@ import {
 } from '../../lib/adminApi';
 import { addDays, formatValue, LANGUAGE_LABELS } from '../../lib/format';
 import { defineCodleTheme, MONACO_LANG } from '../../lib/monaco';
+import { useTheme } from '../../lib/theme';
 import { AdminGate, adminError } from './AdminGate';
 
-const LANGS: Language[] = ['python', 'javascript', 'java', 'cpp'];
+const LANGS: readonly Language[] = LANGUAGES;
 const LEVELS = ['', 'Fácil', 'Medio', 'Difícil', 'Experto'];
 type Tab = 'datos' | 'enunciado' | 'casos' | 'solucion' | 'probar';
 
@@ -70,6 +71,7 @@ export default function AdminEditPage() {
 }
 
 function Editor_() {
+  const { monacoTheme } = useTheme();
   const { id } = useParams();
   const isNew = !id || id === 'new';
   const [search] = useSearchParams();
@@ -437,6 +439,22 @@ function Editor_() {
 
           {tab === 'solucion' && (
             <>
+              <label>
+                Explicación de la solución (es) · Markdown: idea, pasos, errores típicos y complejidad
+                <textarea
+                  rows={8}
+                  value={p.editorial?.es ?? ''}
+                  onChange={(e) => update({ editorial: { es: e.target.value, en: p.editorial?.en ?? '' } })}
+                />
+              </label>
+              <label>
+                Explicación de la solución (en) · Markdown
+                <textarea
+                  rows={8}
+                  value={p.editorial?.en ?? ''}
+                  onChange={(e) => update({ editorial: { es: p.editorial?.es ?? '', en: e.target.value } })}
+                />
+              </label>
               <div className="row">
                 <label>
                   Lenguaje
@@ -466,7 +484,7 @@ function Editor_() {
                   onChange={(v) =>
                     update({ referenceSolution: { language: p.referenceSolution?.language ?? 'python', code: v ?? '' } })
                   }
-                  theme="codle-dark"
+                  theme={monacoTheme}
                   beforeMount={defineCodleTheme}
                   options={{ fontSize: 13, minimap: { enabled: false }, scrollBeyondLastLine: false, automaticLayout: true }}
                 />
@@ -498,7 +516,7 @@ function Editor_() {
                   language={MONACO_LANG[tryLang]}
                   value={tryCode}
                   onChange={(v) => setTryCode(v ?? '')}
-                  theme="codle-dark"
+                  theme={monacoTheme}
                   beforeMount={defineCodleTheme}
                   options={{ fontSize: 13, minimap: { enabled: false }, scrollBeyondLastLine: false, automaticLayout: true }}
                 />

@@ -26,6 +26,27 @@ export const defineCodleTheme: BeforeMount = (monaco) => {
       'editorIndentGuide.background1': '#1f2533',
     },
   });
+  monaco.editor.defineTheme('codle-light', {
+    base: 'vs',
+    inherit: true,
+    rules: [
+      { token: 'comment', foreground: '8a92a3', fontStyle: 'italic' },
+      { token: 'keyword', foreground: '8e3bbd' },
+      { token: 'string', foreground: '2f7d32' },
+      { token: 'number', foreground: 'b25f00' },
+      { token: 'type', foreground: '2f5fb3' },
+    ],
+    colors: {
+      'editor.background': '#ffffff',
+      'editor.lineHighlightBackground': '#f3f5f9',
+      'editorLineNumber.foreground': '#b3b9c6',
+      'editorLineNumber.activeForeground': '#5b6375',
+      'editorGutter.background': '#ffffff',
+      'editor.selectionBackground': '#cfe0ff',
+      'editorCursor.foreground': '#2f9e44',
+      'editorIndentGuide.background1': '#e6e9ef',
+    },
+  });
 };
 
 export const MONACO_LANG = {
@@ -33,4 +54,8 @@ export const MONACO_LANG = {
   javascript: 'javascript',
   java: 'java',
   cpp: 'cpp',
+  go: 'go',
+  rust: 'rust',
+  csharp: 'csharp',
+  typescript: 'typescript',
 } as const;

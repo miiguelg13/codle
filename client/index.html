@@ -12,6 +12,14 @@
       rel="stylesheet"
     />
     <title>Codle · retos diarios de programación</title>
+    <script>
+      // Aplica el tema antes de pintar (evita el parpadeo del tema oscuro al cargar).
+      try {
+        var t = localStorage.getItem('codle:theme');
+        if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

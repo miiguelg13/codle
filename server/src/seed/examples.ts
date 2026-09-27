@@ -35,6 +35,7 @@ export async function seedExamples(opts: { ifNeeded?: boolean } = {}): Promise<n
     const hasToday = await Problem.exists({ date: t, status: 'published' });
     if (hasToday) {
       console.log(`[seed] ya hay retos para hoy (${t}), no hace falta cargar los de ejemplo`);
+      await backfillEditorials(data);
       return 0;
     }
   }
@@ -59,4 +60,18 @@ export async function seedExamples(opts: { ifNeeded?: boolean } = {}): Promise<n
   }
   console.log(`[seed] ${inserted} retos de ejemplo insertados para ${[...new Set(docs.map((d) => d.date))].join(', ')}`);
   return inserted;
+}
+
+async function backfillEditorials(data: SeedProblem[]): Promise<void> {
+  let n = 0;
+  for (const p of data) {
+    const e = p.editorial as { es: string; en: string } | undefined;
+    if (!e) continue;
+    const r = await Problem.updateMany(
+      { source: 'seed', slug: p.slug, 'editorial.es': { $in: [null, ''] } },
+      { $set: { editorial: e } },
+    );
+    n += r.modifiedCount;
+  }
+  if (n) console.log(`[seed] explicación añadida a ${n} retos de ejemplo`);
 }

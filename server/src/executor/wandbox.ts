@@ -1,5 +1,6 @@
 import { config } from '../config.js';
 import type { Language } from '../harness/types.js';
+import { RUST_FLAGS, TS_FLAGS } from './local.js';
 import { ExecutorQuotaError, type ExecRequest, type ExecResult, type Executor } from './types.js';
 
 interface WandboxCompiler {
@@ -10,6 +11,7 @@ interface WandboxCompiler {
 interface WandboxResponse {
   status?: string;
   signal?: string;
+  compiler_output?: string;
   compiler_error?: string;
   compiler_message?: string;
   program_output?: string;
@@ -21,6 +23,10 @@ const FALLBACK: Record<Language, string> = {
   javascript: 'nodejs-20.17.0',
   java: 'openjdk-jdk-22+36',
   cpp: 'gcc-13.2.0',
+  go: 'go-1.23.2',
+  rust: 'rust-1.82.0',
+  csharp: 'mono-6.12.0.199',
+  typescript: 'typescript-5.6.2',
 };
 
 // Versiones estables (nada de "-head" ni pypy).
@@ -29,6 +35,10 @@ const PATTERNS: Record<Language, { language: string; name: RegExp }> = {
   javascript: { language: 'JavaScript', name: /^nodejs-(\d+\.\d+\.\d+)$/ },
   java: { language: 'Java', name: /^openjdk-jdk-(\d+)\+\d+$/ },
   cpp: { language: 'C++', name: /^gcc-(\d+\.\d+\.\d+)$/ },
+  go: { language: 'Go', name: /^go-(\d+\.\d+\.\d+)$/ },
+  rust: { language: 'Rust', name: /^rust-(\d+\.\d+\.\d+)$/ },
+  csharp: { language: 'C#', name: /^mono-(\d+\.\d+\.\d+(?:\.\d+)?)$/ },
+  typescript: { language: 'TypeScript', name: /^typescript-(\d+\.\d+\.\d+)$/ },
 };
 
 const OPTIONS: Record<Language, { compile?: string; runtime?: string }> = {
@@ -36,6 +46,10 @@ const OPTIONS: Record<Language, { compile?: string; runtime?: string }> = {
   javascript: {},
   java: { runtime: '-Xss64m' },
   cpp: { compile: '-O2\n-std=c++17' },
+  go: {},
+  rust: { compile: RUST_FLAGS.join('\n') },
+  csharp: { compile: '-optimize+' },
+  typescript: { compile: TS_FLAGS.join('\n') },
 };
 
 function version(v: string): number[] {
@@ -73,7 +87,7 @@ export const WANDBOX_OUTPUT_LIMIT = 128 * 1024;
 export function mapWandboxResponse(r: WandboxResponse, timedOut = false): ExecResult {
   let stdout = r.program_output ?? '';
   const stderr = r.program_error ?? '';
-  const compileOutput = r.compiler_error ?? '';
+  const compileOutput = [r.compiler_error, r.compiler_output].filter(Boolean).join('\n');
   const code = Number(r.status ?? '0');
   const ran = stdout !== '' || stderr !== '';
 
@@ -88,7 +102,7 @@ export function mapWandboxResponse(r: WandboxResponse, timedOut = false): ExecRe
       message: 'Output limit exceeded (128 KB): quita los print o devuelve menos datos',
     };
   }
-  if (code !== 0 && !ran && /error/i.test(compileOutput)) {
+  if (code !== 0 && !ran && compileOutput.trim() !== '') {
     return { status: 'compile_error', stdout, stderr, compileOutput };
   }
   if (code === 0 && !r.signal) return { status: 'ok', stdout, stderr, compileOutput: '' };
@@ -102,6 +116,16 @@ export function mapWandboxResponse(r: WandboxResponse, timedOut = false): ExecRe
     compileOutput: '',
     message: r.signal ? `Signal: ${r.signal}` : code > 128 ? `Killed by signal ${code - 128}` : `Exited with code ${code}`,
   };
+}
+
+/** Cuerpo de la petición a /api/compile.json. */
+export function wandboxBody(req: Pick<ExecRequest, 'language' | 'source' | 'stdin'>, compiler: string): Record<string, unknown> {
+  const opts = OPTIONS[req.language];
+  const code = req.language === 'java' ? req.source.replace(/^public class Main\b/m, 'class Main') : req.source;
+  const body: Record<string, unknown> = { compiler, code, stdin: req.stdin, save: false };
+  if (opts.compile) body['compiler-option-raw'] = opts.compile;
+  if (opts.runtime) body['runtime-option-raw'] = opts.runtime;
+  return body;
 }
 
 function internalError(message: string): ExecResult {
@@ -142,17 +166,7 @@ export class WandboxExecutor implements Executor {
 
   async execute(req: ExecRequest): Promise<ExecResult> {
     const compilers = await this.pick();
-    const opts = OPTIONS[req.language];
-    const code =
-      req.language === 'java' ? req.source.replace(/^public class Main\b/m, 'class Main') : req.source;
-    const body: Record<string, unknown> = {
-      compiler: compilers[req.language],
-      code,
-      stdin: req.stdin,
-      save: false,
-    };
-    if (opts.compile) body['compiler-option-raw'] = opts.compile;
-    if (opts.runtime) body['runtime-option-raw'] = opts.runtime;
+    const body = wandboxBody(req, compilers[req.language]);
 
     const abortMs = (req.wallTimeLimit + config.wandbox.extraSeconds) * 1000;
     let res: Response;

@@ -307,6 +307,12 @@ def build_problem(p, idx):
         warnings.append(f"solo {len(distinct)} salidas distintas en {len(cases)} casos: ¿tests poco variados?")
     if ref_time > 3:
         warnings.append(f"la referencia en Python tarda {ref_time:.1f}s en total: quizá los tests grandes son demasiado grandes")
+    editorial = p.get("editorial")
+    if editorial is not None:
+        if not isinstance(editorial, dict) or not all(isinstance(editorial.get(k), str) and editorial[k].strip() for k in ("es", "en")):
+            raise SpecError(f"{label}: editorial debe tener textos 'es' y 'en' (markdown con la idea, los pasos y la complejidad)")
+    else:
+        warnings.append("sin editorial: los jugadores no verán la explicación de la solución")
     if brute is None:
         warnings.append("sin solución de fuerza bruta: las salidas solo dependen de la referencia")
     elif checked < 4:
@@ -324,6 +330,7 @@ def build_problem(p, idx):
         "examples": [{k: v for k, v in c.items() if k in ("input", "output", "explanation")} for c in p["examples"]],
         "tests": [{"input": c["input"], "output": c["output"]} for c in p["tests"]],
         "referenceSolution": {"language": "python", "code": "from typing import List\n\n" + p["reference"].strip("\n") + "\n"},
+        **({"editorial": editorial} if editorial else {}),
         "timeLimit": p.get("timeLimit", 5),
     }
     return problem, {"label": label, "ref_time": ref_time, "brute_checked": checked, "warnings": warnings}

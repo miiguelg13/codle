@@ -1,4 +1,5 @@
 import type { Attempt, Progress, Verdict } from '../lib/api';
+import { formatMs, LANGUAGE_LABELS } from '../lib/format';
 import { useI18n } from '../lib/i18n';
 
 function attemptTone(a: Attempt): 'pass' | 'partial' | 'none' {
@@ -57,7 +58,8 @@ export function SubmissionGrid({ progress, totalTests }: { progress: Progress; t
               <strong className={a.passed === a.total ? 'ok' : ''}>
                 {a.passed}/{a.total}
               </strong>{' '}
-              <span className="muted">{a.language}</span>
+              <span className="muted">{LANGUAGE_LABELS[a.language] ?? a.language}</span>
+              {a.timeMs != null && <span className="muted"> · {formatMs(a.timeMs)}</span>}
             </>
           ) : null}
         </span>

@@ -113,7 +113,7 @@ export async function runTests(
 
   if (groups.length === 1) {
     const { exec, parsed } = await runGroup(tests);
-    return { ...parsed, execStatus: exec.status, timeMs: exec.timeMs, memoryKb: exec.memoryKb };
+    return { ...parsed, execStatus: exec.status, timeMs: totalTime(parsed.outcomes) ?? exec.timeMs, memoryKb: exec.memoryKb };
   }
 
   const results = await mapLimit(groups, executor.maxParallel ?? 1, runGroup);
@@ -149,6 +149,18 @@ export async function runTests(
     globalLogs: globalLogs.join('\n'),
     errorOutput: errors.join('\n'),
     execStatus,
-    timeMs: timeMs || undefined,
+    timeMs: totalTime(outcomes) ?? (timeMs || undefined),
   };
+}
+
+function totalTime(outcomes: TestOutcome[]): number | undefined {
+  let sum = 0;
+  let any = false;
+  for (const o of outcomes) {
+    if (o.timeMs != null) {
+      sum += o.timeMs;
+      any = true;
+    }
+  }
+  return any ? Math.round(sum * 10) / 10 : undefined;
 }

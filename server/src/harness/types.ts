@@ -15,7 +15,7 @@ export const VALUE_TYPES = [
 
 export type ValueType = (typeof VALUE_TYPES)[number];
 
-export const LANGUAGES = ['python', 'javascript', 'java', 'cpp'] as const;
+export const LANGUAGES = ['python', 'javascript', 'java', 'cpp', 'go', 'rust', 'csharp', 'typescript'] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 export interface Param {
