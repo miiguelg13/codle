@@ -6,16 +6,16 @@ import { startRetosWatcher } from './services/importer.js';
 import { seedExamples } from './seed/examples.js';
 
 async function main() {
-  await connectDb();
   const executor = getExecutor();
-  if (config.seedOnStart === 'if-empty') {
-    await seedExamples({ ifNeeded: true }).catch((err) => console.warn('[seed] no se pudieron cargar los ejemplos', err));
-  }
-  startRetosWatcher();
   const app = createApp();
   app.listen(config.port, () => {
     console.log(`[server] http://localhost:${config.port}  (ejecutor: ${executor.name}, zona horaria: ${config.timezone})`);
   });
+  await connectDb();
+  if (config.seedOnStart === 'if-empty') {
+    await seedExamples({ ifNeeded: true }).catch((err) => console.warn('[seed] no se pudieron cargar los ejemplos', err));
+  }
+  startRetosWatcher();
 }
 
 main().catch((err) => {

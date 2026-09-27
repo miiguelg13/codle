@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import cookieParser from 'cookie-parser';
 import express from 'express';
 import { existsSync } from 'node:fs';
@@ -32,7 +33,8 @@ export function createApp() {
   app.use(cookieParser());
 
   app.get('/api/health', (_req, res) => {
-    res.json({ ok: true });
+    const db = mongoose.connection.readyState === 1;
+    res.status(db ? 200 : 503).json({ ok: db, db: db ? 'connected' : 'connecting' });
   });
   app.use('/api/admin', session, admin);
   app.use('/api/retos', session, retos);
