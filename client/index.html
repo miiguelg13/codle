@@ -13,8 +13,11 @@
       try {
         var t = localStorage.getItem('codle:theme');
         if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        var k = localStorage.getItem('codle:skin') === 'classic' ? 'classic' : 'bloc';
         document.documentElement.dataset.theme = t;
-        document.querySelector('meta[name="theme-color"]').setAttribute('content', t === 'light' ? '#e3eddb' : '#101913');
+        document.documentElement.dataset.skin = k;
+        var c = k === 'classic' ? (t === 'light' ? '#ffffff' : '#12161f') : t === 'light' ? '#e3eddb' : '#101913';
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', c);
       } catch (e) {}
     </script>
   </head>

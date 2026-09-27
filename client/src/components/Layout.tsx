@@ -4,7 +4,7 @@ import { useAuth } from '../lib/auth';
 import { useI18n } from '../lib/i18n';
 import { useTheme } from '../lib/theme';
 import { storage } from '../lib/storage';
-import { CircleHelp, LogIn, LogOut, Moon, Settings, BarChart3, Sun, UserPlus } from 'lucide-react';
+import { BarChart3, CircleHelp, Flame, LogIn, LogOut, Moon, Settings, Sun, UserPlus } from 'lucide-react';
 import { HowToPlay, openHowToPlay } from './HowToPlay';
 import { Tally } from './Tally';
 
@@ -31,6 +31,21 @@ function LangToggle() {
       </button>
       <button className={lang === 'en' ? 'active' : ''} onClick={() => setLang('en')}>
         EN
+      </button>
+    </div>
+  );
+}
+
+function SkinToggle() {
+  const { skin, setSkin } = useTheme();
+  const { lang } = useI18n();
+  return (
+    <div className="seg" role="group" aria-label={lang === 'es' ? 'Estilo' : 'Style'}>
+      <button className={skin === 'bloc' ? 'active' : ''} onClick={() => setSkin('bloc')} aria-pressed={skin === 'bloc'}>
+        {lang === 'es' ? 'Bloc' : 'Notepad'}
+      </button>
+      <button className={skin === 'classic' ? 'active' : ''} onClick={() => setSkin('classic')} aria-pressed={skin === 'classic'}>
+        {lang === 'es' ? 'Clásico' : 'Classic'}
       </button>
     </div>
   );
@@ -63,6 +78,7 @@ function StreakChip() {
     >
       <span className="field hide-sm">{t('streakField')}</span>
       <Tally n={streak.current} max={5} />
+      <Flame className="flame" strokeWidth={2} aria-hidden />
       <strong>{streak.current}</strong>
     </Link>
   );
@@ -148,7 +164,12 @@ function AccountMenu() {
               : lang === 'es' ? 'Modo oscuro' : 'Dark mode'}
           </button>
           <div className="menu-lang">
+            <span className="field">{lang === 'es' ? 'Idioma' : 'Language'}</span>
             <LangToggle />
+          </div>
+          <div className="menu-lang">
+            <span className="field">{lang === 'es' ? 'Estilo' : 'Style'}</span>
+            <SkinToggle />
           </div>
           {user && (
             <button
