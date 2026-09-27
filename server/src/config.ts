@@ -39,7 +39,7 @@ export const config = {
   wandbox: {
     url: (process.env.WANDBOX_URL ?? 'https://wandbox.org').replace(/\/$/, ''),
     timeFactor: num('WANDBOX_TIME_FACTOR', 1),
-    extraSeconds: num('WANDBOX_EXTRA_SECONDS', 45),
+    extraSeconds: num('WANDBOX_EXTRA_SECONDS', 35),
     compilers: {
       python: process.env.WANDBOX_COMPILER_PYTHON,
       javascript: process.env.WANDBOX_COMPILER_JAVASCRIPT,

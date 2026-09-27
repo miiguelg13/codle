@@ -112,6 +112,16 @@ export class ApiError extends Error {
   }
 }
 
+const RUN_TIMEOUT_MS = 150_000;
+
+function timeoutSignal(ms: number): AbortSignal | undefined {
+  try {
+    return AbortSignal.timeout(ms);
+  } catch {
+    return undefined; // navegadores antiguos
+  }
+}
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -131,11 +141,18 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 async function requestOnce<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`/api${path}`, {
-    credentials: 'same-origin',
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`/api${path}`, {
+      credentials: 'same-origin',
+      ...init,
+      headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
+    });
+  } catch (err) {
+    const name = (err as { name?: string })?.name;
+    if (name === 'TimeoutError' || name === 'AbortError') throw new ApiError(0, 'timeout', 'timeout');
+    throw new ApiError(0, 'network', String(err));
+  }
   const text = await res.text();
   let data: unknown = null;
   try {
@@ -209,7 +226,15 @@ export const api = {
   day: (date: string) => request<DaySummary>(`/days/${date}`),
   problem: (id: string) => request<ProblemDetail>(`/problems/${id}`),
   run: (id: string, language: Language, code: string) =>
-    request<RunResponse>(`/problems/${id}/run`, { method: 'POST', body: JSON.stringify({ language, code }) }),
+    request<RunResponse>(`/problems/${id}/run`, {
+      method: 'POST',
+      body: JSON.stringify({ language, code }),
+      signal: timeoutSignal(RUN_TIMEOUT_MS),
+    }),
   submit: (id: string, language: Language, code: string) =>
-    request<SubmitResponse>(`/problems/${id}/submit`, { method: 'POST', body: JSON.stringify({ language, code }) }),
+    request<SubmitResponse>(`/problems/${id}/submit`, {
+      method: 'POST',
+      body: JSON.stringify({ language, code }),
+      signal: timeoutSignal(RUN_TIMEOUT_MS),
+    }),
 };

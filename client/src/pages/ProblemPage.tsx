@@ -62,6 +62,14 @@ export default function ProblemPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [modal, setModal] = useState<null | 'solved' | 'failed'>(null);
   const [leftPct, setLeftPct] = useState(42);
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    if (!busy) return;
+    setElapsed(0);
+    const started = Date.now();
+    const id = setInterval(() => setElapsed(Math.floor((Date.now() - started) / 1000)), 500);
+    return () => clearInterval(id);
+  }, [busy]);
 
   useEffect(() => {
     let alive = true;
@@ -331,7 +339,7 @@ export default function ProblemPage() {
             </button>
             <div className="spacer" />
             <button className="btn secondary" onClick={run} disabled={!!busy} title="Ctrl+Enter">
-              {busy === 'run' ? t('running') : `▶ ${t('run')}`}
+              {busy === 'run' ? `${t('running')} ${elapsed}s` : `▶ ${t('run')}`}
             </button>
             <button
               className="btn primary"
@@ -339,7 +347,7 @@ export default function ProblemPage() {
               disabled={!!busy || progress.finished}
               title="Ctrl+Shift+Enter"
             >
-              {busy === 'submit' ? t('submitting') : `${t('submit')} (${remaining})`}
+              {busy === 'submit' ? `${t('submitting')} ${elapsed}s` : `${t('submit')} (${remaining})`}
             </button>
           </div>
 
@@ -383,6 +391,7 @@ export default function ProblemPage() {
             </div>
             <div className="console-body">
               {actionError && <p className="error-box">{actionError}</p>}
+              {busy && elapsed >= 5 && <p className="muted small">⏳ {t('slowRunHint')}</p>}
 
               {bottomTab === 'result' &&
                 (!runResult ? (

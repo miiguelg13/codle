@@ -148,7 +148,9 @@ export async function getProblem(id: string, playerId: string) {
 
 export async function runExamples(id: string, language: Language, code: string) {
   const p = await loadVisibleProblem(id);
+  const t0 = Date.now();
   const r = await runTests(p, language, code, p.examples);
+  logRun('ejecutar', p.slug, language, t0, r);
   if (r.execStatus === 'internal_error') throw new HttpError(502, 'executor_error', r.errorOutput);
   return {
     status: r.didNotStart ? 'compile_error' : 'ok',
@@ -209,13 +211,16 @@ export async function submit(id: string, playerId: string, language: Language, c
   const release = () => Progress.updateOne({ _id: locked._id }, { $unset: { pendingUntil: 1 } });
 
   let result;
+  const t0 = Date.now();
   try {
     const all = [...p.examples, ...p.tests];
     result = await runTests(p, language, code, all);
   } catch (err) {
+    console.warn(`[envío] ${p.slug} ${language}: fallo tras ${Date.now() - t0} ms`, err);
     await release();
     throw err;
   }
+  logRun('envío', p.slug, language, t0, result);
 
   if (result.execStatus === 'internal_error') {
     await release();
@@ -278,4 +283,11 @@ export async function submit(id: string, playerId: string, language: Language, c
 function editorialOf(p: { editorial?: { es?: string | null; en?: string | null } | null }) {
   const e = p.editorial;
   return e && (e.es || e.en) ? { es: e.es ?? '', en: e.en ?? '' } : null;
+}
+
+function logRun(kind: string, slug: string, language: string, t0: number, r: { execStatus: string; didNotStart: boolean; outcomes: { verdict: string }[] }) {
+  const passed = r.outcomes.filter((o) => o.verdict === 'pass').length;
+  console.log(
+    `[${kind}] ${slug} ${language}: ${Date.now() - t0} ms, ${r.didNotStart ? 'no arrancó' : `${passed}/${r.outcomes.length}`} (${r.execStatus})`,
+  );
 }

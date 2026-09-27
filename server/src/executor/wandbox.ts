@@ -136,7 +136,7 @@ export class WandboxExecutor implements Executor {
   name = 'wandbox';
   maxRequestBytes = 1_000_000;
   maxOutputBytes = 110_000;
-  maxParallel = 2;
+  maxParallel = 3;
   private compilers: Promise<Record<Language, string>> | null = null;
 
   watchdogMs(cpuSeconds: number): number {
