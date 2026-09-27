@@ -46,7 +46,10 @@ export function createApp() {
   if (existsSync(clientDist)) {
     app.use('/assets', express.static(path.join(clientDist, 'assets'), { immutable: true, maxAge: '1y' }));
     app.use(express.static(clientDist, { index: false }));
-    app.get(/^\/(?!api\/).*/, (_req, res) => res.sendFile(path.join(clientDist, 'index.html')));
+    app.get(/^\/(?!api\/).*/, (_req, res) => {
+      res.setHeader('Cache-Control', 'no-cache');
+      res.sendFile(path.join(clientDist, 'index.html'));
+    });
   }
 
   app.use(errorHandler);
