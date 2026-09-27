@@ -46,7 +46,7 @@ export function parseRun(
     };
   }
 
-  const marker = new RegExp(`^${nonce}:(\\d+):(BEGIN|OK|ERR)(?::(.*))?$`);
+  const marker = new RegExp(`^${nonce}:(\\d+):(BEGIN|OK|ERR|TLE)(?::(.*))?$`);
   const outcomes: (TestOutcome | undefined)[] = new Array(tests.length).fill(undefined);
   const logs: string[][] = tests.map(() => []);
   const global: string[] = [];
@@ -73,6 +73,14 @@ export function parseRun(
       continue;
     }
     current = -1;
+    if (kind === 'TLE') {
+      const t = outcomes[idx] ? idx + 1 : idx;
+      if (t < tests.length) {
+        outcomes[t] = { verdict: 'timeout', error: 'Time limit exceeded', logs: '' };
+        started = true;
+      }
+      break;
+    }
     if (kind === 'ERR') {
       outcomes[idx] = { verdict: 'error', error: payload, logs: '' };
       continue;

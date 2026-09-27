@@ -3,11 +3,12 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { setExecutor } from '../executor/index.js';
 import { LocalExecutor } from '../executor/local.js';
+import { WandboxExecutor } from '../executor/wandbox.js';
 import { runTests } from '../harness/runner.js';
 import { allStarterCode } from '../harness/templates.js';
 import type { CompareMode, Language, Signature, TestCase } from '../harness/types.js';
 
-setExecutor(new LocalExecutor());
+setExecutor(process.env.CODLE_TEST_EXECUTOR === 'wandbox' ? new WandboxExecutor() : new LocalExecutor());
 
 interface SeedProblem {
   slug: string;

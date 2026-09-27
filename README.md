@@ -11,13 +11,13 @@ Cada día hay **4 retos** (Fácil, Medio, Difícil y Experto). Se resuelven en u
 | Frontend | React 19 + Vite + TypeScript, Monaco Editor (cargado desde jsDelivr), react-router |
 | Backend | Node + Express + TypeScript |
 | Base de datos | MongoDB (Mongoose) |
-| Ejecución de código | Judge0 (API), o un ejecutor `local` solo para desarrollo |
+| Ejecución de código | [Wandbox](https://wandbox.org) (gratis, sin clave), Judge0 (de pago) o un ejecutor `local` solo para desarrollo |
 
 ## Publicar en internet
 
 **Código en GitHub:** doble clic en `conectar-github.bat`. Crea un repositorio privado en tu cuenta, sube todo y deja una tarea de Windows que sube los cambios nuevos cada hora.
 
-Consulta **[DESPLIEGUE.md](DESPLIEGUE.md)**: guía paso a paso, gratis y sin tarjeta, con Render, MongoDB Atlas, Judge0 en RapidAPI y UptimeRobot.
+Consulta **[DESPLIEGUE.md](DESPLIEGUE.md)**: guía paso a paso, gratis y sin tarjeta, con Render, MongoDB Atlas, Wandbox y UptimeRobot.
 
 ## Arranque rápido en Windows
 
@@ -48,7 +48,8 @@ Requisitos: **Node 20+** y una base de datos MongoDB.
    cp .env.example server/.env        # macOS / Linux
    ```
    Rellena `MONGODB_URI`, `JWT_SECRET` y el ejecutor:
-   - **Judge0 (recomendado)**: suscríbete al plan gratuito de [Judge0 CE en RapidAPI](https://rapidapi.com/judge0-official/api/judge0-ce) y pon tu clave en `JUDGE0_RAPIDAPI_KEY`. El plan gratuito tiene un límite diario de peticiones. Cada "Ejecutar" y cada "Enviar" gastan **una** petición, porque todos los tests van en la misma.
+   - **Wandbox (por defecto)**: `EXECUTOR=wandbox`. Gratis y sin clave; no hay que configurar nada más.
+   - **Judge0**: `EXECUTOR=judge0` con `JUDGE0_RAPIDAPI_KEY` ([Judge0 CE en RapidAPI](https://rapidapi.com/judge0-official/api/judge0-ce), de pago por uso desde 2026) o `JUDGE0_URL` de una instancia propia.
    - **Local (solo desarrollo)**: `EXECUTOR=local` ejecuta el código directamente en tu PC, **sin aislamiento**. Necesitas `python`, `node`, `javac`/`java` y `g++` en el PATH. En Windows, pon `LOCAL_PYTHON=python`.
 
 3. **Instalar, cargar retos y arrancar**
@@ -108,14 +109,16 @@ Una vez dentro, verás un enlace **⚙ Admin** en el menú de tu cuenta.
 ## Cómo funciona la ejecución
 
 ```
-código del usuario + driver generado  ──►  Judge0 (1 petición)  ──►  stdout con marcadores  ──►  veredicto por test
+código del usuario + driver generado  ──►  Wandbox / Judge0  ──►  stdout con marcadores  ──►  veredicto por test
              ▲                                   ▲
    plantilla a partir de la firma      tests codificados por stdin
 ```
 
 - Cada reto define una **firma tipada** (`functionName`, parámetros y tipo de retorno). A partir de ella se generan la plantilla del editor y un *driver* para cada lenguaje (`server/src/harness/`).
 - Tipos soportados: `int, long, double, bool, string`, sus arrays `[]`, y `int[][]` y `string[][]`.
-- Los tests viajan por **stdin** como tokens simples, así se admiten entradas grandes (10⁵ elementos).
+- Los tests viajan por **stdin** como tokens simples, así se admiten entradas grandes (hasta 700 KB por test).
+- Si todos los tests no caben en una petición (Wandbox admite 1 MB), el runner los reparte en varias y junta los resultados.
+- Con Wandbox, el driver vigila el límite de tiempo: si se agota imprime `NONCE:i:TLE` y termina.
 - El driver imprime `NONCE:i:OK:<json>` por test. El nonce es aleatorio en cada ejecución, así que el usuario no puede falsificar resultados imprimiendo esas líneas.
 - La comparación se hace en el servidor: exacta con tolerancia `1e-6` en decimales, `unordered` o `unordered-deep`.
 - **Los errores de compilación o sintaxis no gastan intento.**
@@ -130,7 +133,7 @@ client/                React + Vite
   src/lib/             api, i18n (es/en), monaco, formato
 server/                Express + Mongo
   src/harness/         tipos, plantillas, drivers por lenguaje, codificación, parseo y comparación
-  src/executor/        Judge0 y ejecutor local
+  src/executor/        Wandbox, Judge0 y ejecutor local
   src/services/game.ts lógica de días, progreso, ejecutar y enviar (con bloqueo anti-envíos simultáneos)
   src/seed/            problemas de ejemplo + generador en Python
   src/tests/           tests end-to-end del harness
@@ -166,4 +169,4 @@ server/                Express + Mongo
 - [x] **Fase 2**: cuentas (registro/login, y pasar el progreso de invitado a la cuenta), rachas y estadísticas
 - [x] **Fase 3**: generación diaria de retos con un agente programado (sin clave de API), validada con la referencia y una fuerza bruta
 - [x] **Fase 4**: panel de administración para revisar, editar y publicar retos
-- [x] **Fase 5**: despliegue gratis en Render + MongoDB Atlas + Judge0 (RapidAPI) + UptimeRobot, explicado en [DESPLIEGUE.md](DESPLIEGUE.md)
+- [x] **Fase 5**: despliegue gratis en Render + MongoDB Atlas + Wandbox + UptimeRobot, explicado en [DESPLIEGUE.md](DESPLIEGUE.md)

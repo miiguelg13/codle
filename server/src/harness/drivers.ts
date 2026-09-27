@@ -6,16 +6,27 @@ export interface BuiltProgram {
   lineOffset: number;
 }
 
-export function buildProgram(lang: Language, userCode: string, sig: Signature, nonce: string): BuiltProgram {
+export interface BuildOptions {
+  watchdogMs?: number;
+}
+
+export function buildProgram(
+  lang: Language,
+  userCode: string,
+  sig: Signature,
+  nonce: string,
+  opts: BuildOptions = {},
+): BuiltProgram {
+  const wd = opts.watchdogMs && opts.watchdogMs > 0 ? Math.round(opts.watchdogMs) : 0;
   switch (lang) {
     case 'python':
-      return { source: userCode + '\n\n' + pythonDriver(sig, nonce), lineOffset: 0 };
+      return { source: userCode + '\n\n' + pythonDriver(sig, nonce, wd), lineOffset: 0 };
     case 'javascript':
-      return { source: userCode + '\n\n' + jsDriver(sig, nonce), lineOffset: 0 };
+      return { source: userCode + '\n\n' + jsDriver(sig, nonce, wd), lineOffset: 0 };
     case 'java':
-      return { source: javaProgram(userCode, sig, nonce), lineOffset: 0 };
+      return { source: javaProgram(userCode, sig, nonce, wd), lineOffset: 0 };
     case 'cpp':
-      return { source: cppProgram(userCode, sig, nonce), lineOffset: 0 };
+      return { source: cppProgram(userCode, sig, nonce, wd), lineOffset: 0 };
   }
 }
 
@@ -25,7 +36,7 @@ function pyRead(t: ValueType): string {
   return { int: 'ri()', long: 'ri()', double: 'rd()', bool: 'rb()', string: 'rs()' }[t as 'int'];
 }
 
-function pythonDriver(sig: Signature, nonce: string): string {
+function pythonDriver(sig: Signature, nonce: string, wd: number): string {
   const fn = sig.functionName;
   const reads = sig.params.map((p) => pyRead(p.type)).join(', ');
   return `# ---- driver (no modificar) ----
@@ -49,9 +60,22 @@ def __cdl_main():
         pos[0] += n
         return b.decode('utf-8')
     g = globals()
+    cur = [0]${
+      wd
+        ? `
+    import os, signal
+    def __cdl_tle(*_):
+        sys.stdout.write("\\n${nonce}:%d:TLE\\n" % cur[0])
+        sys.stdout.flush()
+        os._exit(0)
+    signal.signal(signal.SIGALRM, __cdl_tle)
+    signal.setitimer(signal.ITIMER_REAL, ${wd / 1000})`
+        : ''
+    }
     T = ri()
     for i in range(T):
         args = [${reads}]
+        cur[0] = i
         print("\\n${nonce}:%d:BEGIN" % i, flush=True)
         try:
             if 'Solution' in g:
@@ -75,7 +99,7 @@ function jsRead(t: ValueType): string {
   return { int: 'rn()', long: 'rn()', double: 'rn()', bool: 'rb()', string: 'rs()' }[t as 'int'];
 }
 
-function jsDriver(sig: Signature, nonce: string): string {
+function jsDriver(sig: Signature, nonce: string, wd: number): string {
   const fn = sig.functionName;
   const reads = sig.params.map((p) => jsRead(p.type)).join(', ');
   return `// ---- driver (no modificar) ----
@@ -91,7 +115,27 @@ function jsDriver(sig: Signature, nonce: string): string {
     return b.toString('utf8');
   }
   function ra(f) { var n = rn(); var a = new Array(n); for (var j = 0; j < n; j++) a[j] = f(); return a; }
-  function w(s) { process.stdout.write(s); }
+  function w(s) { process.stdout.write(s); }${
+    wd
+      ? `
+  // Vigilante: vm corta incluso un bucle infinito síncrono.
+  var vm = require('vm'); var deadline = Date.now() + ${wd};
+  function call(f, args, i) {
+    var left = deadline - Date.now();
+    try {
+      if (left <= 0) throw { code: 'ERR_SCRIPT_EXECUTION_TIMEOUT' };
+      return vm.runInNewContext('__f()', { __f: function () { return f.apply(null, args); } }, { timeout: left });
+    } catch (e) {
+      if (e && e.code === 'ERR_SCRIPT_EXECUTION_TIMEOUT') {
+        require('fs').writeSync(1, '\\n${nonce}:' + i + ':TLE\\n');
+        process.exit(0);
+      }
+      throw e;
+    }
+  }`
+      : `
+  function call(f, args) { return f.apply(null, args); }`
+  }
   var T = rn();
   for (var i = 0; i < T; i++) {
     var args = [${reads}];
@@ -101,7 +145,7 @@ function jsDriver(sig: Signature, nonce: string): string {
       if (typeof ${fn} === 'function') f = ${fn};
       else if (typeof Solution === 'function') { var inst = new Solution(); f = inst.${fn}.bind(inst); }
       else throw new ReferenceError('${fn} is not defined');
-      var r = f.apply(null, args);
+      var r = call(f, args, i);
       var s = JSON.stringify(r === undefined ? null : r);
       w('\\n${nonce}:' + i + ':OK:' + s + '\\n');
     } catch (e) {
@@ -132,7 +176,7 @@ function javaRead(t: ValueType): string {
 
 const JAVA_PRELUDE = 'import java.util.*;import java.util.function.*;import java.util.stream.*;';
 
-function javaProgram(userCode: string, sig: Signature, nonce: string): string {
+function javaProgram(userCode: string, sig: Signature, nonce: string, wd: number): string {
   const code = userCode.replace(/\bpublic\s+(final\s+)?class\s+Solution\b/, (_m, fin) => `${fin ?? ''}class Solution`);
   const fn = sig.functionName;
   const decls = sig.params.map((p, i) => `${javaType(p.type)} a${i} = ${javaRead(p.type)};`).join(' ');
@@ -140,7 +184,7 @@ function javaProgram(userCode: string, sig: Signature, nonce: string): string {
   return `${JAVA_PRELUDE}${code}
 
 public class Main {
-    static byte[] B; static int P = 0;
+    static byte[] B; static int P = 0; static volatile int CUR = 0;
     static String nx() {
         while (P < B.length && B[P] <= ' ') P++;
         int s = P;
@@ -191,10 +235,22 @@ public class Main {
         B = bo.toByteArray();
         // Forzamos UTF-8 (la codificación por defecto de la JVM puede ser ASCII).
         System.setOut(new java.io.PrintStream(new java.io.BufferedOutputStream(new java.io.FileOutputStream(java.io.FileDescriptor.out), 1 << 16), true, "UTF-8"));
-        java.io.PrintStream out = System.out;
+        java.io.PrintStream out = System.out;${
+          wd
+            ? `
+        Thread wd = new Thread(() -> {
+            try { Thread.sleep(${wd}L); } catch (InterruptedException ie) { return; }
+            synchronized (out) { out.print("\\n${nonce}:" + CUR + ":TLE\\n"); out.flush(); }
+            Runtime.getRuntime().halt(0);
+        });
+        wd.setDaemon(true);
+        wd.start();`
+            : ''
+        }
         int T = ri();
         for (int i = 0; i < T; i++) {
             ${decls}
+            CUR = i;
             out.print("\\n${nonce}:" + i + ":BEGIN\\n"); out.flush();
             try {
                 ${javaType(sig.returnType)} r = new Solution().${fn}(${args});
@@ -218,7 +274,7 @@ function cppRead(t: ValueType): string {
   ];
 }
 
-function cppProgram(userCode: string, sig: Signature, nonce: string): string {
+function cppProgram(userCode: string, sig: Signature, nonce: string, wd: number): string {
   const fn = sig.functionName;
   const decls = sig.params.map((p, i) => `${cppType(p.type)} a${i} = ${cppRead(p.type)};`).join(' ');
   const args = sig.params.map((_, i) => `a${i}`).join(', ');
@@ -266,7 +322,40 @@ namespace __cdl {
     }
 }
 
-int main() {
+${
+  wd
+    ? `#include <csignal>
+#include <sys/time.h>
+#include <unistd.h>
+namespace __cdl {
+    static volatile sig_atomic_t CUR = 0;
+    extern "C" void tle(int) {
+        char b[96]; int n = 0;
+        const char* pre = "\\n${nonce}:";
+        for (const char* q = pre; *q; q++) b[n++] = *q;
+        char d[16]; int k = 0; long v = CUR;
+        do { d[k++] = (char) ('0' + v % 10); v /= 10; } while (v > 0);
+        while (k > 0) b[n++] = d[--k];
+        const char* suf = ":TLE\\n";
+        for (const char* q = suf; *q; q++) b[n++] = *q;
+        ssize_t w = write(1, b, n); (void) w;
+        _exit(0);
+    }
+}
+`
+    : ''
+}int main() {${
+    wd
+      ? `
+    {
+        signal(SIGALRM, __cdl::tle);
+        struct itimerval it = {};
+        it.it_value.tv_sec = ${Math.floor(wd / 1000)};
+        it.it_value.tv_usec = ${(wd % 1000) * 1000};
+        setitimer(ITIMER_REAL, &it, nullptr);
+    }`
+      : ''
+  }
     {
         string all; char buf[1 << 16]; size_t n;
         while ((n = fread(buf, 1, sizeof buf, stdin)) > 0) all.append(buf, n);
@@ -279,7 +368,8 @@ int main() {
     }
     int T = __cdl::ri();
     for (int i = 0; i < T; i++) {
-        ${decls}
+        ${decls}${wd ? `
+        __cdl::CUR = i;` : ''}
         cout << "\\n${nonce}:" << i << ":BEGIN" << endl;
         try {
             Solution sol;

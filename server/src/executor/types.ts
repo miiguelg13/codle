@@ -27,6 +27,10 @@ export interface ExecResult {
 export interface Executor {
   name: string;
   execute(req: ExecRequest): Promise<ExecResult>;
+  maxRequestBytes?: number;
+  /** Cuántas de esas ejecuciones lanzar a la vez. */
+  maxParallel?: number;
+  watchdogMs?(cpuSeconds: number): number;
 }
 
 export class ExecutorQuotaError extends Error {

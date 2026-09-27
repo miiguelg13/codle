@@ -140,7 +140,7 @@ problem(
         "es": "Dados dos arrays ordenados de forma ascendente `a` y `b`, de tamaños `m` y `n`, devuelve la **mediana** de la unión de ambos.\n\nSi el número total de elementos es par, la mediana es la media de los dos elementos centrales.\n\n**Reto:** consigue una complejidad `O(log(m + n))`.",
         "en": "Given two arrays `a` and `b` sorted in ascending order, of sizes `m` and `n`, return the **median** of the two arrays combined.\n\nIf the total number of elements is even, the median is the mean of the two middle elements.\n\n**Challenge:** achieve `O(log(m + n))` complexity.",
     },
-    constraints=["0 <= m, n <= 10^5", "1 <= m + n", "-10^6 <= a[i], b[i] <= 10^6"],
+    constraints=["0 <= m, n <= 5 * 10^4", "1 <= m + n", "-10^6 <= a[i], b[i] <= 10^6"],
     signature={"functionName": "findMedianSortedArrays", "params": [{"name": "a", "type": "int[]"}, {"name": "b", "type": "int[]"}], "returnType": "double"},
     compare="exact",
     examples=[
@@ -150,7 +150,7 @@ problem(
     tests=[{"input": t} for t in [
         [[], [1]], [[2], []], [[0, 0], [0, 0]], [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]],
         [[-5, -3, -1], [-2]], [[1], [2, 3, 4, 5, 6]], [[1000000], [-1000000]],
-        [sorted(random.randint(-10**6, 10**6) for _ in range(99999)), sorted(random.randint(-10**6, 10**6) for _ in range(100000))],
+        [sorted(random.randint(-10**6, 10**6) for _ in range(44999)), sorted(random.randint(-10**6, 10**6) for _ in range(45000))],
         [sorted(random.randint(-100, 100) for _ in range(50000)), []],
     ]],
     reference="""

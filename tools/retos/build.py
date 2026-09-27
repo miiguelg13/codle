@@ -44,10 +44,32 @@ SAFE = 2 ** 53 - 1
 BRUTE_MAX_INPUT_CHARS = 3000
 BRUTE_TIME_BUDGET = 20.0
 MAX_DAY_MB = 4.0               # tamaño máximo del JSON de un día
+MAX_TEST_KB = 700              # entrada de un solo test
+MAX_PROBLEM_KB = 2000          # entrada de todos los casos de un problema
 
 
 class SpecError(Exception):
     pass
+
+
+def _num(v):
+    if isinstance(v, float) and v.is_integer() and abs(v) < 1e21:
+        return str(int(v))
+    return repr(v)
+
+
+def encoded_len(v, t):
+    """Caracteres que ocupa un valor en la entrada del programa (ver encode.ts)."""
+    if t.endswith("[]"):
+        return len(str(len(v))) + sum(1 + encoded_len(x, t[:-2]) for x in v)
+    if t in ("int", "long"):
+        return len(str(int(v)))
+    if t == "double":
+        return len(_num(v))
+    if t == "bool":
+        return 1
+    b = v.encode("utf-8")
+    return len(str(len(b))) + sum(1 + len(str(x)) for x in b)
 
 
 def check_value(v, t, path):
@@ -214,6 +236,18 @@ def build_problem(p, idx):
             raise SpecError(f"{label}: {kind} {i}: input debe ser una lista con {len(params)} valores")
         for j, prm in enumerate(params):
             check_value(c["input"][j], prm["type"], f"{label}: {kind} {i}.{prm['name']}")
+
+    total_kb = 0.0
+    for kind, i, c in cases:
+        kb = sum(1 + encoded_len(c["input"][j], prm["type"]) for j, prm in enumerate(params)) / 1000
+        total_kb += kb
+        if kb > MAX_TEST_KB:
+            raise SpecError(
+                f"{label}: {kind} {i}: la entrada ocupa {kb:.0f} KB (máximo {MAX_TEST_KB} KB por test, "
+                f"el motor no acepta peticiones de más de 1 MB): reduce ese test"
+            )
+    if total_kb > MAX_PROBLEM_KB:
+        raise SpecError(f"{label}: las entradas suman {total_kb:.0f} KB (máximo {MAX_PROBLEM_KB} KB): reduce los tests grandes")
 
     ref = load_solution(p["reference"], sig["functionName"], f"{label} reference")
     brute = load_solution(p["brute"], sig["functionName"], f"{label} brute") if p.get("brute") else None

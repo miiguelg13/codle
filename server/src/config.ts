@@ -34,7 +34,19 @@ export const config = {
   submitLimitPerMinute: num('SUBMIT_LIMIT_PER_MINUTE', 10),
   retosDir: process.env.RETOS_DIR ? path.resolve(process.env.RETOS_DIR) : path.join(ROOT, 'retos'),
 
-  executor: (process.env.EXECUTOR ?? 'judge0') as 'judge0' | 'local',
+  executor: (process.env.EXECUTOR ?? 'wandbox') as 'wandbox' | 'judge0' | 'local',
+
+  wandbox: {
+    url: (process.env.WANDBOX_URL ?? 'https://wandbox.org').replace(/\/$/, ''),
+    timeFactor: num('WANDBOX_TIME_FACTOR', 1),
+    extraSeconds: num('WANDBOX_EXTRA_SECONDS', 20),
+    compilers: {
+      python: process.env.WANDBOX_COMPILER_PYTHON,
+      javascript: process.env.WANDBOX_COMPILER_JAVASCRIPT,
+      java: process.env.WANDBOX_COMPILER_JAVA,
+      cpp: process.env.WANDBOX_COMPILER_CPP,
+    },
+  },
 
   judge0: {
     url: (process.env.JUDGE0_URL ?? 'https://judge0-ce.p.rapidapi.com').replace(/\/$/, ''),

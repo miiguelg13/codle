@@ -6,7 +6,7 @@ Todo lo que hay aquí es gratis y no pide tarjeta. Tardarás unos 30–45 minuto
 |---|---|---|
 | Código | Render despliega desde aquí | **GitHub** (repositorio privado) |
 | Base de datos | usuarios, progreso, retos | **MongoDB Atlas** (M0, 512 MB) |
-| Ejecutar código | "Ejecutar" y "Enviar" | **Judge0 CE en RapidAPI** (plan Basic) |
+| Ejecutar código | "Ejecutar" y "Enviar" | **Wandbox** (gratis, sin cuenta ni clave) |
 | La web | servidor + frontend | **Render** (Web Service Free) |
 | Que no se duerma | visita la web cada 5 min | **UptimeRobot** (50 monitores) |
 
@@ -42,21 +42,20 @@ Haz doble clic en **`conectar-github.bat`** (en la carpeta del proyecto). Usa Gi
    ```
    Esta es tu **MONGODB_URI**.
 
-## 3. Ejecución de código: Judge0 en RapidAPI
+## 3. Ejecución de código: Wandbox (no hay que hacer nada)
 
-1. Crea una cuenta en https://rapidapi.com.
-2. Abre https://rapidapi.com/judge0-official/api/judge0-ce/pricing y suscríbete al plan **Basic** (gratis).
-3. En la pestaña **Endpoints**, copia el valor de **X-RapidAPI-Key**. Esa es tu **JUDGE0_RAPIDAPI_KEY**.
+El código de los jugadores se ejecuta en [Wandbox](https://wandbox.org), un compilador online gratuito que no pide cuenta ni clave. Ya viene configurado (`EXECUTOR=wandbox` en `render.yaml`).
 
-El plan gratis tiene un límite diario de peticiones. Cada "Ejecutar" y cada "Enviar" gasta **una** petición, porque todos los tests van juntos. Si se agota, los jugadores ven el aviso "Se ha agotado la cuota diaria del ejecutor". Si la web crece, puedes pasar a un plan de pago sin tocar código.
+- Wandbox no acepta peticiones de más de 1 MB. Si los tests de un reto no caben en una, el servidor los reparte en varias. `build.py` impide que un test pase de 700 KB.
+- Wandbox no aplica el límite de tiempo de cada reto: lo vigila el propio programa, que se corta al agotarlo y marca ese test como "Tiempo límite excedido".
+- Es un servicio comunitario sin garantías. Si algún día va lento o se cae, "Ejecutar" y "Enviar" mostrarán un error y no se gasta intento. Como alternativa de pago está Judge0 en RapidAPI (`EXECUTOR=judge0` y `JUDGE0_RAPIDAPI_KEY`), que cuesta unos 0,0017 $ por ejecución.
 
 ## 4. La web: Render
 
 1. Crea una cuenta en https://render.com con **Sign in with GitHub** y dale acceso al repositorio.
 2. **New → Blueprint** y elige el repositorio. Render lee el fichero `render.yaml` y crea el servicio `codle`.
-3. Te pedirá tres valores:
+3. Te pedirá dos valores:
    - `MONGODB_URI`: la del paso 2.
-   - `JUDGE0_RAPIDAPI_KEY`: la del paso 3.
    - `ADMIN_EMAILS`: tu email, que te dará acceso al panel `/admin`.
 
    `JWT_SECRET` y `RETOS_UPLOAD_TOKEN` se generan solos.
@@ -110,7 +109,7 @@ También puedes subir ficheros `retos/AAAA-MM-DD.json` a mano desde el panel: **
 |---|---|
 | El despliegue falla con "JWT_SECRET es obligatorio" | La variable no existe en Render → Environment. Añádela con un valor aleatorio largo. |
 | La web no arranca: "MongoServerSelectionError" | Falta `0.0.0.0/0` en Atlas → Network Access, o la contraseña de la URI no es correcta. Si la contraseña tiene símbolos, codifícalos para URL o genera otra solo con letras y números. |
-| "Ejecutar" da "El motor de ejecución no responde" | `JUDGE0_RAPIDAPI_KEY` está vacía o no es correcta, o no te suscribiste al plan Basic. |
+| "Ejecutar" da "El motor de ejecución no responde" | Wandbox está caído o saturado. Prueba en https://wandbox.org; si no va, espera un rato. |
 | La web tarda ~1 min en cargar | Se durmió. Revisa que el monitor de UptimeRobot está activo. |
 | GitHub no recibe los cambios | Mira `logs/subida-github.log`. Si pone "Authentication failed", ejecuta `conectar-github.bat` para volver a iniciar sesión. |
 | No aparecen los retos nuevos | Mira `logs/subida-retos.log` en tu PC y comprueba `.codle-deploy`. |

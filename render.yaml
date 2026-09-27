@@ -18,7 +18,7 @@ services:
       - key: MONGOMS_DISABLE_POSTINSTALL
         value: "1"
       - key: EXECUTOR
-        value: judge0
+        value: wandbox
       - key: APP_TIMEZONE
         value: Europe/Madrid
       - key: SEED_ON_START
@@ -28,8 +28,6 @@ services:
       - key: RETOS_UPLOAD_TOKEN
         generateValue: true
       - key: MONGODB_URI
-        sync: false
-      - key: JUDGE0_RAPIDAPI_KEY
         sync: false
       - key: ADMIN_EMAILS
         sync: false
