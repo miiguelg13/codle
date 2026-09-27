@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api, type CalendarDay } from '../lib/api';
+import { ArchiveList } from '../components/ArchiveList';
+import { api, type ArchiveItem, type CalendarDay } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { errorMessage, useI18n } from '../lib/i18n';
 
@@ -39,12 +40,17 @@ export default function ArchivePage() {
   const { user } = useAuth();
   const [data, setData] = useState<{ today: string; days: CalendarDay[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [items, setItems] = useState<ArchiveItem[] | null>(null);
 
   useEffect(() => {
     api
       .calendar()
       .then(setData)
       .catch((e) => setError(errorMessage(t, e)));
+    api
+      .archive()
+      .then((r) => setItems(r.problems))
+      .catch(() => setItems([]));
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const byDate = useMemo(() => new Map((data?.days ?? []).map((d) => [d.date, d])), [data]);
@@ -114,6 +120,7 @@ export default function ArchivePage() {
           </section>
         ))}
       </div>
+      {items && items.length > 0 && <ArchiveList items={items} today={data.today} />}
     </main>
   );
 }

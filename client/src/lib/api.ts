@@ -42,6 +42,19 @@ export interface CalendarDay {
   failed: number;
 }
 
+export type ArchiveStatus = 'new' | 'attempted' | 'solved' | 'failed';
+
+export interface ArchiveItem {
+  id: string;
+  slug: string;
+  date: string;
+  level: number;
+  title: I18nText;
+  tags: string[];
+  status: ArchiveStatus;
+  attempts: number;
+}
+
 export interface Param {
   name: string;
   type: string;
@@ -223,6 +236,7 @@ export const api = {
   stats: () => request<Stats>('/stats'),
   meta: () => request<Meta>('/meta'),
   calendar: () => request<{ today: string; days: CalendarDay[] }>('/calendar'),
+  archive: () => request<{ today: string; problems: ArchiveItem[] }>('/archive'),
   day: (date: string) => request<DaySummary>(`/days/${date}`),
   problem: (id: string) => request<ProblemDetail>(`/problems/${id}`),
   run: (id: string, language: Language, code: string) =>

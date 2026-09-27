@@ -119,6 +119,37 @@ export async function getCalendar(playerId: string) {
   };
 }
 
+export async function getArchive(playerId: string) {
+  const t = today();
+  const problems = await Problem.find({ status: 'published', date: { $lte: t } })
+    .select('slug date level title tags')
+    .sort({ date: -1, level: 1 })
+    .limit(3000)
+    .lean<{ _id: unknown; slug: string; date: string; level: number; title: { es: string; en: string }; tags?: string[] }[]>();
+  const progress = await Progress.find({ playerId, problemId: { $in: problems.map((p) => p._id) } })
+    .select('problemId solved attempts')
+    .lean<{ problemId: unknown; solved?: boolean; attempts?: unknown[] }[]>();
+  const byId = new Map(progress.map((p) => [String(p.problemId), p]));
+  return {
+    today: t,
+    problems: problems.map((p) => {
+      const pr = byId.get(String(p._id));
+      const attempts = pr?.attempts?.length ?? 0;
+      const status = pr?.solved ? 'solved' : attempts >= config.maxAttempts ? 'failed' : attempts > 0 ? 'attempted' : 'new';
+      return {
+        id: String(p._id),
+        slug: p.slug,
+        date: p.date,
+        level: p.level,
+        title: p.title,
+        tags: p.tags ?? [],
+        status,
+        attempts,
+      };
+    }),
+  };
+}
+
 export async function getProblem(id: string, playerId: string) {
   const p = await loadVisibleProblem(id);
   const progress = await Progress.findOne({ playerId, problemId: p._id }).lean<LeanProgress>();

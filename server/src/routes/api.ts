@@ -5,7 +5,7 @@ import { config } from '../config.js';
 import { MAX_CODE_LENGTH } from '../harness/runner.js';
 import { LANGUAGES, VALUE_TYPES } from '../harness/types.js';
 import { isValidDate, msUntilNextDay, today } from '../services/dates.js';
-import { getCalendar, getDay, getProblem, HttpError, runExamples, submit } from '../services/game.js';
+import { getArchive, getCalendar, getDay, getProblem, HttpError, runExamples, submit } from '../services/game.js';
 
 export const api = Router();
 
@@ -58,6 +58,11 @@ api.get(
 api.get(
   '/calendar',
   h(async (req) => getCalendar(req.playerId)),
+);
+
+api.get(
+  '/archive',
+  h(async (req) => getArchive(req.playerId)),
 );
 
 api.get(

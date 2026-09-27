@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import { useI18n } from '../lib/i18n';
 import { useTheme } from '../lib/theme';
+import { storage } from '../lib/storage';
+import { HowToPlay } from './HowToPlay';
 
 function Logo() {
   const letters = ['C', 'O', 'D', 'L', 'E'];
@@ -153,7 +155,18 @@ function AccountMenu() {
 }
 
 export function Layout() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const [help, setHelp] = useState(() => storage.get('seenHelp') !== '1');
+  useEffect(() => {
+    const open = () => setHelp(true);
+    window.addEventListener('codle:how-to-play', open);
+    return () => window.removeEventListener('codle:how-to-play', open);
+  }, []);
+  const closeHelp = useCallback(() => {
+    storage.set('seenHelp', '1');
+    setHelp(false);
+  }, []);
+  const helpLabel = lang === 'es' ? 'Cómo se juega' : 'How to play';
   return (
     <div className="app">
       <header className="topbar">
@@ -173,6 +186,9 @@ export function Layout() {
         </nav>
         <div className="topbar-right">
           <StreakChip />
+          <button className="theme-toggle" onClick={() => setHelp(true)} title={helpLabel} aria-label={helpLabel}>
+            ?
+          </button>
           <ThemeToggle />
           <div className="hide-sm">
             <LangToggle />
@@ -181,6 +197,7 @@ export function Layout() {
         </div>
       </header>
       <Outlet />
+      {help && <HowToPlay onClose={closeHelp} />}
     </div>
   );
 }

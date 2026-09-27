@@ -5,6 +5,7 @@ import { api, type DaySummary, type Progress } from '../lib/api';
 import { addDays, dayNumber, formatDate } from '../lib/format';
 import { useAuth } from '../lib/auth';
 import { errorMessage, levelKey, useI18n } from '../lib/i18n';
+import { openHowToPlay } from '../components/HowToPlay';
 
 function useCountdown(ms: number | null) {
   const [left, setLeft] = useState(ms);
@@ -26,6 +27,41 @@ function statusText(t: ReturnType<typeof useI18n>['t'], p: Progress): string {
   if (p.finished) return t('outOfAttempts');
   if (p.attempts.length) return t('attemptsUsed', { n: p.attempts.length, max: p.maxAttempts });
   return t('notStarted');
+}
+
+function progressTone(p: Progress): string {
+  if (p.solved) return 'tone-pass';
+  if (p.finished) return 'tone-fail';
+  if (p.attempts.length) return 'tone-partial';
+  return 'tone-empty';
+}
+
+function DayProgress({ day }: { day: DaySummary }) {
+  const { t } = useI18n();
+  const solved = day.problems.filter((p) => p.progress.solved).length;
+  const allDone = day.problems.every((p) => p.progress.finished);
+  return (
+    <div className="day-progress">
+      <div className="day-progress-bar" aria-hidden>
+        {[...day.problems]
+          .sort((a, b) => a.level - b.level)
+          .map((p) => (
+            <span key={p.id} className={progressTone(p.progress)} />
+          ))}
+      </div>
+      <p className={allDone ? 'day-done' : 'muted'}>
+        {allDone ? (day.isToday ? t('dayComplete') : t('dayCompleteRetro')) : t('dayProgress', { s: solved, n: day.problems.length })}
+        {!allDone && solved === 0 && (
+          <>
+            {' · '}
+            <button className="how-link" onClick={openHowToPlay}>
+              {t('howToLink')}
+            </button>
+          </>
+        )}
+      </p>
+    </div>
+  );
 }
 
 export default function DayPage() {
@@ -94,6 +130,7 @@ export default function DayPage() {
             t('tagline')
           )}
         </p>
+        {day.problems.length > 0 && <DayProgress day={day} />}
       </section>
 
       {day.problems.length === 0 ? (

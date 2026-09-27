@@ -133,6 +133,23 @@ describe('API', { skip: !MONGO && 'define TEST_MONGODB_URI para ejecutar los tes
     r = await c.call('GET', `/problems/${fizzId}`);
     assert.equal(r.data.progress.solved, true);
     assert.equal(r.data.progress.attempts.length, 2);
+
+    r = await c.call('GET', '/archive');
+    assert.equal(r.status, 200);
+    assert.equal(r.data.today, today());
+    assert.deepEqual(
+      r.data.problems.map((p: { slug: string; status: string; attempts: number }) => [p.slug, p.status, p.attempts]),
+      [
+        ['fizz-hoy', 'solved', 2],
+        ['fizz-ayer', 'solved', 1],
+      ],
+    );
+    const invitado = new Client();
+    r = await invitado.call('GET', '/archive');
+    assert.deepEqual(
+      r.data.problems.map((p: { status: string }) => p.status),
+      ['new', 'new'],
+    );
   });
 
   test('validaciones de registro', async () => {

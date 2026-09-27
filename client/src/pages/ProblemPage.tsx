@@ -310,10 +310,13 @@ export default function ProblemPage() {
                       <span className="badge">
                         {LANGUAGE_LABELS[problem.referenceSolution.language as Language] ?? problem.referenceSolution.language}
                       </span>
+                      <CopyButton text={problem.referenceSolution.code} />
                     </div>
-                    <pre className="solution-code">
-                      <code>{problem.referenceSolution.code}</code>
-                    </pre>
+                    <SolutionCode
+                      code={problem.referenceSolution.code}
+                      language={problem.referenceSolution.language as Language}
+                      theme={monacoTheme}
+                    />
                   </>
                 )}
               </>
@@ -341,14 +344,15 @@ export default function ProblemPage() {
             <button className="btn secondary" onClick={run} disabled={!!busy} title="Ctrl+Enter">
               {busy === 'run' ? `${t('running')} ${elapsed}s` : `▶ ${t('run')}`}
             </button>
-            <button
-              className="btn primary"
-              onClick={submit}
-              disabled={!!busy || progress.finished}
-              title="Ctrl+Shift+Enter"
-            >
-              {busy === 'submit' ? `${t('submitting')} ${elapsed}s` : `${t('submit')} (${remaining})`}
-            </button>
+            {progress.finished && busy !== 'submit' ? (
+              <button className={`btn ${progress.solved ? 'done' : 'secondary'}`} disabled>
+                {progress.solved ? t('solvedButton') : t('noAttemptsButton')}
+              </button>
+            ) : (
+              <button className="btn primary" onClick={submit} disabled={!!busy} title="Ctrl+Shift+Enter">
+                {busy === 'submit' ? `${t('submitting')} ${elapsed}s` : `${t('submit')} (${remaining})`}
+              </button>
+            )}
           </div>
 
           {editorSlow && !editorReady && (
@@ -485,6 +489,54 @@ export default function ProblemPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function SolutionCode({ code, language, theme }: { code: string; language: Language; theme: string }) {
+  const lines = code.split('\n').length;
+  return (
+    <div className="solution-editor" style={{ height: Math.min(lines, 40) * 19 + 16 }}>
+      <Editor
+        value={code}
+        language={MONACO_LANG[language] ?? 'python'}
+        theme={theme}
+        beforeMount={defineCodleTheme}
+        options={{
+          readOnly: true,
+          domReadOnly: true,
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 13,
+          lineHeight: 19,
+          minimap: { enabled: false },
+          scrollBeyondLastLine: false,
+          lineNumbers: 'off',
+          folding: false,
+          renderLineHighlight: 'none',
+          automaticLayout: true,
+          padding: { top: 8, bottom: 8 },
+          scrollbar: { alwaysConsumeMouseWheel: false },
+        }}
+      />
+    </div>
+  );
+}
+
+function CopyButton({ text }: { text: string }) {
+  const { t } = useI18n();
+  const [done, setDone] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setDone(true);
+      setTimeout(() => setDone(false), 1500);
+    } catch {
+      /* sin permiso de portapapeles: no hacemos nada */
+    }
+  };
+  return (
+    <button className="ghost copy-btn" onClick={copy}>
+      {done ? `✓ ${t('copied')}` : `⧉ ${t('copy')}`}
+    </button>
   );
 }
 
