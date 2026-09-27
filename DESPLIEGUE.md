@@ -18,13 +18,12 @@ Todo lo que hay aquí es gratis y no pide tarjeta. Tardarás unos 30–45 minuto
 
 ## 1. Subir el código a GitHub (privado)
 
-La forma más sencilla es con **GitHub Desktop**:
+Haz doble clic en **`conectar-github.bat`** (en la carpeta del proyecto). Usa Git for Windows, que ya tienes instalado:
 
-1. Crea una cuenta en https://github.com si no la tienes, e instala https://desktop.github.com.
-2. En GitHub Desktop: **File → Add local repository…** y elige la carpeta `Wordle programacion`. Ya es un repositorio git con todo el historial.
-3. Pulsa **Publish repository**. Deja marcada la casilla **Keep this code private**: el repositorio lleva soluciones y tests de los retos, que no deben ser públicos.
-
-Cada vez que haya cambios, ábrelo y pulsa **Commit to main** y luego **Push origin**. Render se vuelve a desplegar solo.
+1. Te pregunta el nombre del repositorio. Pulsa Enter para dejar `codle`.
+2. La primera vez se abre el navegador para que inicies sesión en GitHub y autorices a **Git Credential Manager**. El script no ve tu contraseña.
+3. Crea el repositorio **privado** en tu cuenta y sube todo el historial. Tiene que ser privado porque lleva las soluciones y los tests de los retos. Si ya existe un repositorio con ese nombre y es público, se para sin subir nada.
+4. Crea la tarea de Windows **"Codle - subir a GitHub"**, que cada hora sube los commits nuevos: tus commits y los retos del agente. Nunca pide contraseña. Si la sesión de GitHub caduca, verás el error en `logs/subida-github.log`; vuelve a ejecutar `conectar-github.bat`.
 
 ## 2. Base de datos: MongoDB Atlas
 
@@ -102,7 +101,7 @@ También puedes subir ficheros `retos/AAAA-MM-DD.json` a mano desde el panel: **
 
 ## Cómo se actualiza
 
-- **Código:** cuando Claude haga cambios en tu carpeta, haz Commit + Push en GitHub Desktop. Render redespliega solo en 3–5 minutos.
+- **Código:** los commits que hagas en tu carpeta (y los retos que escribe el agente) llegan a GitHub en menos de una hora, con la tarea "Codle - subir a GitHub". Render redespliega solo en 3–5 minutos. Para subirlos ya, vuelve a ejecutar `conectar-github.bat`.
 - **Retos:** el agente los genera cada noche en tu PC, y la tarea de Windows los sube a la web. El PC tiene que estar encendido a esas horas.
 
 ## Problemas frecuentes
@@ -113,5 +112,6 @@ También puedes subir ficheros `retos/AAAA-MM-DD.json` a mano desde el panel: **
 | La web no arranca: "MongoServerSelectionError" | Falta `0.0.0.0/0` en Atlas → Network Access, o la contraseña de la URI no es correcta. Si la contraseña tiene símbolos, codifícalos para URL o genera otra solo con letras y números. |
 | "Ejecutar" da "El motor de ejecución no responde" | `JUDGE0_RAPIDAPI_KEY` está vacía o no es correcta, o no te suscribiste al plan Basic. |
 | La web tarda ~1 min en cargar | Se durmió. Revisa que el monitor de UptimeRobot está activo. |
+| GitHub no recibe los cambios | Mira `logs/subida-github.log`. Si pone "Authentication failed", ejecuta `conectar-github.bat` para volver a iniciar sesión. |
 | No aparecen los retos nuevos | Mira `logs/subida-retos.log` en tu PC y comprueba `.codle-deploy`. |
 | El build se queda sin memoria | En Render → Environment, añade `NODE_OPTIONS=--max-old-space-size=460`. |

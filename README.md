@@ -15,6 +15,8 @@ Cada día hay **4 retos** (Fácil, Medio, Difícil y Experto). Se resuelven en u
 
 ## Publicar en internet
 
+**Código en GitHub:** doble clic en `conectar-github.bat`. Crea un repositorio privado en tu cuenta, sube todo y deja una tarea de Windows que sube los cambios nuevos cada hora.
+
 Consulta **[DESPLIEGUE.md](DESPLIEGUE.md)**: guía paso a paso, gratis y sin tarjeta, con Render, MongoDB Atlas, Judge0 en RapidAPI y UptimeRobot.
 
 ## Arranque rápido en Windows
