@@ -442,8 +442,8 @@ problem(
     tests=[{"input": t} for t in [
         [[5], 1], [[1, 2], 2], [[2147483647, 2147483647], 2], [[-2147483648, -2147483648, 2147483647], 2],
         [[1, 1, 1, 1], 2], [[random.randint(-100, 100) for _ in range(200)], 7],
-        [[random.randint(-10**9, 10**9) for _ in range(30000)], 5000],
-        [[random.randint(-10**9, 10**9) for _ in range(30000)], 2],
+        [[random.randint(-10**9, 10**9) for _ in range(30000)], 24000],
+        [[random.randint(-1000, 1000) for _ in range(12000)], 2],
         [[random.randint(0, 10) for _ in range(30000)], 30000],
     ]],
     reference="""

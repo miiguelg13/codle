@@ -67,14 +67,27 @@ export function pickCompilers(list: WandboxCompiler[]): Record<Language, string>
   return out;
 }
 
+/** Límite de salida de Wandbox (bytes). */
+export const WANDBOX_OUTPUT_LIMIT = 128 * 1024;
+
 export function mapWandboxResponse(r: WandboxResponse, timedOut = false): ExecResult {
-  const stdout = r.program_output ?? '';
+  let stdout = r.program_output ?? '';
   const stderr = r.program_error ?? '';
   const compileOutput = r.compiler_error ?? '';
   const code = Number(r.status ?? '0');
   const ran = stdout !== '' || stderr !== '';
 
   if (timedOut) return { status: 'timeout', stdout, stderr, compileOutput, message: 'Time limit exceeded' };
+  if (r.status === '' && Buffer.byteLength(stdout, 'utf8') >= WANDBOX_OUTPUT_LIMIT - 1024) {
+    stdout = stdout.slice(0, stdout.lastIndexOf('\n') + 1);
+    return {
+      status: 'runtime_error',
+      stdout,
+      stderr,
+      compileOutput: '',
+      message: 'Output limit exceeded (128 KB): quita los print o devuelve menos datos',
+    };
+  }
   if (code !== 0 && !ran && /error/i.test(compileOutput)) {
     return { status: 'compile_error', stdout, stderr, compileOutput };
   }
@@ -98,6 +111,7 @@ function internalError(message: string): ExecResult {
 export class WandboxExecutor implements Executor {
   name = 'wandbox';
   maxRequestBytes = 1_000_000;
+  maxOutputBytes = 110_000;
   maxParallel = 2;
   private compilers: Promise<Record<Language, string>> | null = null;
 

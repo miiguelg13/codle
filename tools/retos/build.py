@@ -46,6 +46,8 @@ BRUTE_TIME_BUDGET = 20.0
 MAX_DAY_MB = 4.0               # tamaño máximo del JSON de un día
 MAX_TEST_KB = 700              # entrada de un solo test
 MAX_PROBLEM_KB = 2000          # entrada de todos los casos de un problema
+MAX_OUTPUT_KB = 110            # salida esperada de un solo test (JSON)
+MAX_PROBLEM_OUTPUT_KB = 500
 
 
 class SpecError(Exception):
@@ -264,6 +266,18 @@ def build_problem(p, idx):
             raise SpecError(f"{label}: {kind} {i}: el output escrito a mano {c['output']!r} no coincide con la referencia {out!r}")
         c["output"] = out
     ref_time = time.time() - t0
+
+    out_total = 0.0
+    for kind, i, c in cases:
+        kb = len(json.dumps(c["output"], separators=(",", ":"), ensure_ascii=False).encode("utf-8")) / 1000
+        out_total += kb
+        if kb > MAX_OUTPUT_KB:
+            raise SpecError(
+                f"{label}: {kind} {i}: la salida esperada ocupa {kb:.0f} KB (máximo {MAX_OUTPUT_KB} KB por test, "
+                f"el motor corta la salida a 128 KB): reduce ese test"
+            )
+    if out_total > MAX_PROBLEM_OUTPUT_KB:
+        raise SpecError(f"{label}: las salidas suman {out_total:.0f} KB (máximo {MAX_PROBLEM_OUTPUT_KB} KB): reduce los tests con salidas grandes")
 
     checked = 0
     if brute:

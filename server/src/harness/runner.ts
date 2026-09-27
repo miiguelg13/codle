@@ -29,22 +29,38 @@ function jsonBytes(s: string): number {
   return Buffer.byteLength(JSON.stringify(s), 'utf8');
 }
 
-export function splitTests(sig: Signature, tests: TestCase[], sourceBytes: number, maxBytes?: number): TestCase[][] {
-  if (!maxBytes || tests.length <= 1) return [tests];
-  const budget = maxBytes - sourceBytes - REQUEST_OVERHEAD;
-  if (jsonBytes(encodeTests(sig, tests)) <= budget) return [tests];
+function outputBytes(t: TestCase): number {
+  return Buffer.byteLength(JSON.stringify(t.output ?? null) ?? 'null', 'utf8') + 64;
+}
+
+export function splitTests(
+  sig: Signature,
+  tests: TestCase[],
+  sourceBytes: number,
+  maxBytes?: number,
+  maxOutput?: number,
+): TestCase[][] {
+  if ((!maxBytes && !maxOutput) || tests.length <= 1) return [tests];
+  const budget = maxBytes ? maxBytes - sourceBytes - REQUEST_OVERHEAD : Infinity;
+  const outBudget = maxOutput ?? Infinity;
+  const totalOut = tests.reduce((a, t) => a + outputBytes(t), 0);
+  if (jsonBytes(encodeTests(sig, tests)) <= budget && totalOut <= outBudget) return [tests];
   const groups: TestCase[][] = [];
   let cur: TestCase[] = [];
   let curBytes = 8; // "T\n" y comillas
+  let curOut = 0;
   for (const t of tests) {
     const b = jsonBytes(encodeTests(sig, [t])) - 4;
-    if (cur.length && curBytes + b > budget) {
+    const o = outputBytes(t);
+    if (cur.length && (curBytes + b > budget || curOut + o > outBudget)) {
       groups.push(cur);
       cur = [];
       curBytes = 8;
+      curOut = 0;
     }
     cur.push(t);
     curBytes += b;
+    curOut += o;
   }
   if (cur.length) groups.push(cur);
   return groups;
@@ -75,7 +91,13 @@ export async function runTests(
   const program = buildProgram(language, code, problem.signature, nonce, {
     watchdogMs: executor.watchdogMs?.(cpu),
   });
-  const groups = splitTests(problem.signature, tests, jsonBytes(program.source), executor.maxRequestBytes);
+  const groups = splitTests(
+    problem.signature,
+    tests,
+    jsonBytes(program.source),
+    executor.maxRequestBytes,
+    executor.maxOutputBytes,
+  );
 
   const runGroup = async (group: TestCase[]) => {
     const exec: ExecResult = await executor.execute({

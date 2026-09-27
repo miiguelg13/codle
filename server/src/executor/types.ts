@@ -28,6 +28,7 @@ export interface Executor {
   name: string;
   execute(req: ExecRequest): Promise<ExecResult>;
   maxRequestBytes?: number;
+  maxOutputBytes?: number;
   /** Cuántas de esas ejecuciones lanzar a la vez. */
   maxParallel?: number;
   watchdogMs?(cpuSeconds: number): number;

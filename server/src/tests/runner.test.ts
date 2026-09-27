@@ -56,6 +56,11 @@ test('splitTests: agrupa sin pasar del límite y conserva el orden', () => {
   assert.deepEqual(groups.flat(), tests);
   assert.deepEqual(splitTests(sig, tests, 5000, undefined), [tests]);
   assert.deepEqual(splitTests(sig, tests.slice(0, 2), 5000, 40_000), [tests.slice(0, 2)]);
+
+  const big = Array.from({ length: 6 }, (_, i) => ({ input: [[i]], output: 'x'.repeat(30_000) }));
+  const byOut = splitTests(sig, big, 5000, 1_000_000, 110_000);
+  assert.deepEqual(byOut.map((g) => g.length), [3, 3]);
+  assert.deepEqual(byOut.flat(), big);
 });
 
 for (const lang of ['python', 'javascript', 'java', 'cpp'] as Language[]) {
@@ -125,6 +130,11 @@ test('mapWandboxResponse: estados', () => {
   assert.equal(py.stderr, 'Traceback...\nValueError');
   assert.equal(mapWandboxResponse({ status: '137', program_output: 'start\n' }).status, 'timeout');
   assert.equal(mapWandboxResponse({}, true).status, 'timeout');
+
+  const cut = mapWandboxResponse({ status: '', program_output: 'N:0:BEGIN\n' + 'N:0:OK:[' + '1,'.repeat(70_000) });
+  assert.equal(cut.status, 'runtime_error');
+  assert.equal(cut.stdout, 'N:0:BEGIN\n');
+  assert.match(cut.message ?? '', /Output limit/);
 });
 
 let server: Server;
