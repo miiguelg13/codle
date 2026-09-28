@@ -17,6 +17,7 @@ services:
         value: --max-old-space-size=384
       - key: MONGOMS_DISABLE_POSTINSTALL
         value: "1"
+      # Wandbox: gratis y sin clave
       - key: EXECUTOR
         value: wandbox
       - key: APP_TIMEZONE
