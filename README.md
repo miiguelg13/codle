@@ -15,7 +15,7 @@ Cada día hay **4 retos** (Fácil, Medio, Difícil y Experto). Se resuelven en u
 
 ## Publicar en internet
 
-**Código en GitHub:** doble clic en `conectar-github.bat`. Crea un repositorio privado en tu cuenta, sube todo y deja una tarea de Windows que sube los cambios nuevos cada hora.
+**Código en GitHub:** doble clic en `conectar-github.bat`. Crea el repositorio en tu cuenta, sube el código (los retos de `retos/specs/` se quedan en tu PC) y deja una tarea de Windows que sube los cambios nuevos cada hora.
 
 Consulta **[DESPLIEGUE.md](DESPLIEGUE.md)**: guía paso a paso, gratis y sin tarjeta, con Render, MongoDB Atlas, Wandbox y UptimeRobot.
 
@@ -77,7 +77,7 @@ Cada noche, a las 21:48 (hora de Madrid), una tarea programada lanza un agente d
 1. Mira qué días faltan con `python3 tools/retos/build.py --status 3`.
 2. Escribe un *spec* por día en `retos/specs/AAAA-MM-DD.py`: 4 problemas con enunciado es/en, tests, solución de referencia y fuerza bruta.
 3. Lo construye con `python3 tools/retos/build.py retos/specs/AAAA-MM-DD.py`. El script calcula las salidas con la referencia, las contrasta con la fuerza bruta, valida tipos y tamaños, y escribe `retos/AAAA-MM-DD.json`.
-4. Hace commit del spec. El JSON no se versiona porque se puede regenerar a partir del spec.
+4. Deja el spec en `retos/specs/`. Ni el spec ni el JSON se versionan, para no publicar las soluciones antes de tiempo.
 
 El servidor importa `retos/*.json` al arrancar y cada 5 minutos (`npm run import -w server` lo fuerza al momento). Además:
 

@@ -4,7 +4,7 @@ Todo lo que hay aquí es gratis y no pide tarjeta. Tardarás unos 30–45 minuto
 
 | Pieza | Para qué | Servicio (plan gratis) |
 |---|---|---|
-| Código | Render despliega desde aquí | **GitHub** (repositorio privado) |
+| Código | Render despliega desde aquí | **GitHub** |
 | Base de datos | usuarios, progreso, retos | **MongoDB Atlas** (M0, 512 MB) |
 | Ejecutar código | "Ejecutar" y "Enviar" | **Wandbox** (gratis, sin cuenta ni clave) |
 | La web | servidor + frontend | **Render** (Web Service Free) |
@@ -16,14 +16,14 @@ Todo lo que hay aquí es gratis y no pide tarjeta. Tardarás unos 30–45 minuto
 
 ---
 
-## 1. Subir el código a GitHub (privado)
+## 1. Subir el código a GitHub
 
 Haz doble clic en **`conectar-github.bat`** (en la carpeta del proyecto). Usa Git for Windows, que ya tienes instalado:
 
 1. Te pregunta el nombre del repositorio. Pulsa Enter para dejar `codle`.
 2. La primera vez se abre el navegador para que inicies sesión en GitHub y autorices a **Git Credential Manager**. El script no ve tu contraseña.
-3. Crea el repositorio **privado** en tu cuenta y sube todo el historial. Tiene que ser privado porque lleva las soluciones y los tests de los retos. Si ya existe un repositorio con ese nombre y es público, se para sin subir nada.
-4. Crea la tarea de Windows **"Codle - subir a GitHub"**, que cada hora sube los commits nuevos: tus commits y los retos del agente. Nunca pide contraseña. Si la sesión de GitHub caduca, verás el error en `logs/subida-github.log`; vuelve a ejecutar `conectar-github.bat`.
+3. Crea el repositorio **privado** en tu cuenta y sube todo el historial. Los retos (`retos/specs/`) no se suben: se quedan en tu PC para que nadie vea las soluciones antes de tiempo. Si ya existe un repositorio con ese nombre, lo reutiliza.
+4. Crea la tarea de Windows **"Codle - subir a GitHub"**, que cada hora sube tus commits nuevos. Nunca pide contraseña. Si la sesión de GitHub caduca, verás el error en `logs/subida-github.log`; vuelve a ejecutar `conectar-github.bat`.
 
 ## 2. Base de datos: MongoDB Atlas
 
@@ -100,7 +100,7 @@ También puedes subir ficheros `retos/AAAA-MM-DD.json` a mano desde el panel: **
 
 ## Cómo se actualiza
 
-- **Código:** los commits que hagas en tu carpeta (y los retos que escribe el agente) llegan a GitHub en menos de una hora, con la tarea "Codle - subir a GitHub". Render redespliega solo en 3–5 minutos. Para subirlos ya, vuelve a ejecutar `conectar-github.bat`.
+- **Código:** los commits que hagas en tu carpeta llegan a GitHub en menos de una hora, con la tarea "Codle - subir a GitHub". Render redespliega solo en 3–5 minutos. Para subirlos ya, vuelve a ejecutar `conectar-github.bat`.
 - **Retos:** el agente los genera cada noche en tu PC, y la tarea de Windows los sube a la web. El PC tiene que estar encendido a esas horas.
 
 ## Problemas frecuentes

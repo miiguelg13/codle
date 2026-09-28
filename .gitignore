@@ -9,3 +9,4 @@ logs/
 retos/*.json
 .codle-deploy
 .codle-deploy-estado.json
+retos/specs/

@@ -4,7 +4,7 @@ Lo lanza conectar-github.bat (doble clic). Pasos:
   1. Pide a Git Credential Manager tus credenciales de GitHub. La primera vez se
      abre el navegador para que inicies sesión y autorices a Git; este script
      nunca ve ni guarda tu contraseña, solo usa el token que devuelve Git.
-  2. Crea el repositorio privado (si ya existe, lo reutiliza; si es público, para).
+  2. Crea el repositorio privado (si ya existe, lo reutiliza).
   3. Configura el remoto "origin" y hace push de la rama main.
 
 Uso: python tools/github/conectar.py [nombre-del-repo]   (por defecto: codle)
@@ -99,12 +99,7 @@ def main():
         status, repo = api("GET", f"/repos/{login}/{nombre}", token)
         if status != 200:
             raise SystemExit(f"\n  No se pudo crear ni leer el repositorio {login}/{nombre} ({status}).")
-        if not repo.get("private"):
-            raise SystemExit(
-                f"\n  El repositorio {login}/{nombre} ya existe y es PÚBLICO. No subo nada: lleva las soluciones de los retos."
-                "\n  Hazlo privado en GitHub (Settings -> Danger Zone) o elige otro nombre."
-            )
-        print(f"  El repositorio {login}/{nombre} ya existía (privado): lo reutilizo.")
+        print(f"  El repositorio {login}/{nombre} ya existía: lo reutilizo.")
     else:
         msg = repo.get("message", "")
         raise SystemExit(f"\n  GitHub no dejó crear el repositorio ({status}): {msg}")
